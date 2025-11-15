@@ -17,7 +17,7 @@
 使用提供的启动脚本一键启动：
 
 ```bash
-cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/server
+cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/backend
 ./start.sh
 ```
 
@@ -48,7 +48,7 @@ fuser -k 8010/tcp
 
 ```bash
 # 进入服务目录
-cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/server
+cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/backend
 
 # 激活虚拟环境
 source .venv/bin/activate
@@ -86,8 +86,8 @@ curl http://localhost:8010/health
 如果需要访问前端页面，在项目根目录启动 HTTP 服务器：
 
 ```bash
-# 进入项目根目录
-cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/stitch_bill_auto_scan_entry
+# 进入前端目录
+cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/frontend
 fuser -k 5500/tcp
 # 启动静态服务器（端口 5500）
 python3 -m http.server 5500 --bind 0.0.0.0
@@ -104,7 +104,7 @@ python3 -m http.server 5500 --bind 0.0.0.0
 
 ```bash
 # 使用 nohup 后台运行
-cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/server
+cd /home/bld/data/data4/admin/fintechcom/stitch_bill_auto_scan_entry/backend
 source .venv/bin/activate
 export QWEN_MODEL_DIR="/home/bld/data/data4/admin/fintechcom/Qwen2.5-VL-3B-Instruct/model"
 export PORT=8010
@@ -117,7 +117,7 @@ tail -f server.log
 pkill -f "python app.py"
 ```
 
-默认数据目录：`server/data/bills.db`，可通过环境变量 `AI_BOOKKEEPER_DATA_DIR` 自定义。
+默认数据目录：`backend/data/bills.db`，可通过环境变量 `AI_BOOKKEEPER_DATA_DIR` 自定义。
 
 ## REST 接口
 
@@ -169,7 +169,7 @@ POST /chat
 ```
 GET /reports/aggregate
 ```
-- 数据来源：`server/data/synthetic_bank_bills.jsonl` 过去一年的账单
+- 数据来源：`backend/data/synthetic_bank_bills.jsonl` 过去一年的账单
 - 返回内容：
   - `week` / `month` / `year` 三个维度的收入、支出柱状图数据
   - 本期净储蓄与上一期对比
@@ -182,7 +182,7 @@ GET /reports/aggregate
 ```
 GET /advice/context
 ```
-- 数据来源：`server/data/bills.db` 数据库
+- 数据来源：`backend/data/bills.db` 数据库
 - 返回内容：
   - `overview`：最近30天的财务概览数据（收入、支出、净储蓄、分类变化等）
   - `behavior`：过去180天的消费行为分析数据（月度统计、风险标志、波动性等）
