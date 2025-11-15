@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>设置 - AI 记账</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3B82F6",
+                        "background": "#F0F5FF",
+                        "text-primary": "#172554",
+                        "text-secondary": "#64748B",
+                        "surface": "#FFFFFF",
+                        "border": "#E2E8F0",
+                        "success": "#22C55E",
+                        "danger": "#EF4444",
+                        "primary-light": "#EFF6FF",
+                    },
+                    fontFamily: {
+                        "sans": ["Noto Sans SC", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.75rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+      background-color: #F0F5FF;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-sans bg-background text-text-primary">
+<div class="relative mx-auto flex h-auto min-h-screen w-full max-w-lg flex-col overflow-x-hidden">
+<header class="flex items-center bg-background p-4 pb-2 justify-between sticky top-0 z-10">
+<button class="text-text-primary flex size-12 shrink-0 items-center justify-center rounded-full hover:bg-black/5">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-text-primary text-lg font-bold leading-tight flex-1 text-center">设置</h1>
+<div class="size-12"></div>
+</header>
+<main class="flex-1 pb-32">
+<div class="px-4 py-3">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-surface border border-border">
+<div class="text-text-secondary flex items-center justify-center pl-4">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-primary focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-text-secondary px-2 text-base font-normal leading-normal" placeholder="搜索设置" value=""/>
+</div>
+</label>
+</div>
+<div class="space-y-6">
+<div>
+<h2 class="text-text-secondary text-sm font-bold leading-tight tracking-wide uppercase px-4 pb-2 pt-4">账户与个人资料</h2>
+<div class="bg-surface rounded-xl mx-4 overflow-hidden border border-border">
+<div class="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50" id="profile-item">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-14 w-14" data-alt="User avatar image" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDcg0_v9PiHKPAdf3pJAQ28oZWgAQ0vGV3MeQm9ny_RQCFXid6NlpnQprWVCJWDZwu8naWk72YTsnQ3yUZlWck5JaG2kaXSwg8QRefYx-gQDTqEFaGNzEz2c4KD7eGHttVbkYjukvouPR8skDSJI6VKtn9OPI2Dy8Z7llKQX_khSZTi5oCigTj1cq1hLoyZI1yvbQ8DnMdB4Px9LiALPLpk1OWrv2XyV5Fiaypfwv7qBFdPS4B2H72q7d1vze103civwQWibbGeJQYB");'></div>
+<div class="flex flex-col justify-center">
+<p class="text-text-primary text-base font-semibold leading-normal line-clamp-1" id="profile-name">王丽</p>
+<p class="text-text-secondary text-sm font-normal leading-normal line-clamp-2" id="profile-email">wang.li@email.com</p>
+</div>
+<div class="ml-auto shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<h2 class="text-text-secondary text-sm font-bold leading-tight tracking-wide uppercase px-4 pb-2 pt-4">关联银行账户</h2>
+<div class="bg-surface rounded-xl mx-4 overflow-hidden border border-border">
+<div class="flex items-center gap-4 p-4">
+<div class="flex items-center justify-center rounded-lg bg-primary-light shrink-0 size-10">
+<img alt="ICBC Bank" class="h-6 w-6 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClB930K2_hWo1u-7aEoGpMNe62NzFmH_jg9BblTRvlNLzyb4vLUPO1p-WaJlynVfIn8yOvCRBnfK046VmVMJx9OPjvcWmnO6CeyUJNPegn0KoN3M1iVhR-Y94TshJiglJncD30PD8N9cdAUBWgjSTIJigM58LUpAsW_z1g9ZybpJ5_y15Gym8BR2yjSNMVPYpbzC_Zi5goCOlZIR7r0Z8xufbNE2306y40wfkYbyNNTnuyuCtqAbtZcK_IyScYywHd6MSK_D2EQ-Z_"/>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-text-primary text-base font-normal leading-normal line-clamp-1">微众银行</p>
+<p class="text-success text-sm font-medium leading-normal line-clamp-2">已连接</p>
+</div>
+<div class="ml-auto shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+</div>
+<hr class="border-border ml-4"/>
+<div class="flex items-center gap-4 p-4">
+<div class="flex items-center justify-center rounded-lg bg-primary-light shrink-0 size-10">
+<img alt="Bank of China" class="h-6 w-6 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD70zRK0j7aXlHJXsPfCXmW0yoGLD2G6XaXj4FRlAhSC77uE_MeaVSVdzUw8zJ4mxmRxaWXmRIGILGsk390yLlF4SvTWQbOmRWAPQM-lq7Rac-WL7yNjlG8NdPWQDvVYhi6eYV5cQEgQwHFAztXQwsT-MHkmqnsFVxEkVEfut_wuK6RxUNIpv1Wljdj8VPlHq8oJdPCwFxaUOl35SNWpUCYhBrmnOXL0V8FWYCDaAqPq5VtnBRKW5zpsuIff2UsYHuNjwC3ABSNsuDi"/>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-text-primary text-base font-normal leading-normal line-clamp-1">中国银行</p>
+<p class="text-danger text-sm font-medium leading-normal line-clamp-2">需要操作</p>
+</div>
+<div class="ml-auto shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+</div>
+</div>
+<div class="px-4 pt-4">
+<button class="flex items-center justify-center gap-2 w-full h-12 px-6 font-semibold rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined">add</span>
+<span>添加新账户</span>
+</button>
+</div>
+</div>
+<div>
+<h2 class="text-text-secondary text-sm font-bold leading-tight tracking-wide uppercase px-4 pb-2 pt-4">AI 与自动化</h2>
+<div class="bg-surface rounded-xl mx-4 overflow-hidden border border-border">
+<div class="flex items-center gap-4 p-4 min-h-14 justify-between cursor-pointer hover:bg-gray-50" id="rule-item">
+<div class="flex items-center gap-4">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary-light shrink-0 size-10"><span class="material-symbols-outlined">rule</span></div>
+<p class="text-text-primary text-base font-normal leading-normal flex-1 truncate">自定义分类规则</p>
+</div>
+<div class="shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<h2 class="text-text-secondary text-sm font-bold leading-tight tracking-wide uppercase px-4 pb-2 pt-4">偏好设置</h2>
+<div class="bg-surface rounded-xl mx-4 overflow-hidden border border-border">
+<div class="flex items-center gap-4 p-4 min-h-14 justify-between cursor-pointer hover:bg-gray-50" id="notif-item">
+<div class="flex items-center gap-4">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary-light shrink-0 size-10"><span class="material-symbols-outlined">notifications</span></div>
+<p class="text-text-primary text-base font-normal leading-normal flex-1 truncate">通知设置</p>
+</div>
+<div class="shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+</div>
+<hr class="border-border ml-4"/>
+<div class="flex items-center gap-4 p-4 min-h-14 justify-between cursor-pointer hover:bg-gray-50" id="currency-item">
+<div class="flex items-center gap-4">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary-light shrink-0 size-10"><span class="material-symbols-outlined">public</span></div>
+<p class="text-text-primary text-base font-normal leading-normal flex-1 truncate">货币与地区</p>
+</div>
+<div class="shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<h2 class="text-text-secondary text-sm font-bold leading-tight tracking-wide uppercase px-4 pb-2 pt-4">支持与法律</h2>
+<div class="bg-surface rounded-xl mx-4 overflow-hidden border border-border">
+<div class="flex items-center gap-4 p-4 min-h-14 justify-between cursor-pointer hover:bg-gray-50" id="help-item">
+<div class="flex items-center gap-4">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary-light shrink-0 size-10"><span class="material-symbols-outlined">help_center</span></div>
+<p class="text-text-primary text-base font-normal leading-normal flex-1 truncate">帮助中心</p>
+</div>
+<div class="shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+</div>
+<hr class="border-border ml-4"/>
+<div class="flex items-center gap-4 p-4 min-h-14 justify-between cursor-pointer hover:bg-gray-50" id="legal-item">
+<div class="flex items-center gap-4">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary-light shrink-0 size-10"><span class="material-symbols-outlined">gavel</span></div>
+<p class="text-text-primary text-base font-normal leading-normal flex-1 truncate">法律条款</p>
+</div>
+<div class="shrink-0">
+<div class="text-text-secondary flex size-7 items-center justify-center"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+</div>
+</div>
+</div>
+<div class="px-4 pt-4">
+<button id="logout-btn" class="flex items-center justify-center gap-2 w-full h-12 px-6 font-semibold rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors">
+<span class="material-symbols-outlined">logout</span>
+<span>退出登录</span>
+</button>
+</div>
+</div>
+</main>
+<script>
+// 统一API地址配置，持久化在 localStorage
+const API_KEY = 'AI_BOOKKEEPER_API';
+function getApiBase() {
+	return window.LOCAL_LLM_API || localStorage.getItem(API_KEY) || 'http://10.120.17.24:8010';
+}
+
+// 动态插入一个“后端地址设置 + 健康检查”卡片
+(function mountApiCard(){
+	const main = document.querySelector('main');
+	if (!main) return;
+	const card = document.createElement('div');
+	card.className = 'bg-surface rounded-xl mx-4 overflow-hidden border border-border mt-4';
+	card.innerHTML = `
+	  <div class="p-4 space-y-3">
+	    <h3 class="text-base font-semibold text-text-primary">后端服务</h3>
+	    <div class="flex gap-2 items-center">
+	      <input id="api-input" class="flex-1 h-10 rounded-lg border border-border px-3" placeholder="http://host:port" />
+	      <button id="api-save" class="h-10 px-4 rounded-lg bg-primary text-white">保存</button>
+	      <button id="api-test" class="h-10 px-4 rounded-lg bg-primary/10 text-primary">测试</button>
+	    </div>
+	    <div id="api-tip" class="text-sm text-text-secondary"></div>
+	  </div>
+	`;
+	main.prepend(card);
+	const input = card.querySelector('#api-input');
+	const tip = card.querySelector('#api-tip');
+	input.value = getApiBase();
+	card.querySelector('#api-save').addEventListener('click', () => {
+		const v = input.value.trim();
+		if (!v) return;
+		localStorage.setItem(API_KEY, v);
+		window.LOCAL_LLM_API = v;
+		tip.textContent = '已保存';
+	});
+	card.querySelector('#api-test').addEventListener('click', async () => {
+		const base = (input.value || '').trim() || getApiBase();
+		tip.textContent = '测试中...';
+		try {
+			const r = await fetch(`${base}/health`);
+			if (!r.ok) throw new Error(await r.text());
+			const data = await r.json();
+			tip.textContent = `健康: ${data.status || '未知'}`;
+		} catch (e) {
+			tip.textContent = '不可达：' + (e?.message || e);
+		}
+	});
+	// 暴露全局
+	window.LOCAL_LLM_API = input.value;
+	window.getApiBase = getApiBase;
+})();
+
+// 设置项交互
+document.getElementById('profile-item')?.addEventListener('click', ()=>{
+	const name = prompt('修改姓名：', document.getElementById('profile-name')?.textContent || '');
+	if(name) document.getElementById('profile-name').textContent = name;
+	const email = prompt('修改邮箱：', document.getElementById('profile-email')?.textContent || '');
+	if(email) document.getElementById('profile-email').textContent = email;
+});
+
+document.getElementById('rule-item')?.addEventListener('click', ()=>{
+	alert('自定义分类规则功能：\n\n您可以设置关键词与类别的映射关系，例如：\n- "星巴克" → 餐饮\n- "滴滴" → 交通\n\n此功能将在后续版本中完善。');
+});
+
+document.getElementById('notif-item')?.addEventListener('click', ()=>{
+	const enabled = confirm('是否启用通知提醒？\n\n点击"确定"启用，点击"取消"关闭。');
+	alert(enabled ? '通知已启用' : '通知已关闭');
+});
+
+document.getElementById('currency-item')?.addEventListener('click', ()=>{
+	const currency = prompt('设置默认货币（例如：CNY, USD, EUR）：', 'CNY');
+	if(currency) {
+		localStorage.setItem('AI_BOOKKEEPER_CURRENCY', currency.toUpperCase());
+		alert(`默认货币已设置为：${currency.toUpperCase()}`);
+	}
+});
+
+document.getElementById('help-item')?.addEventListener('click', ()=>{
+	alert('帮助中心\n\n1. 如何记账？\n在账单页面点击底部"手动输入"、"上传票据"或"文本描述"按钮。\n\n2. 如何查看报表？\n点击底部导航的"图表"按钮。\n\n3. 如何设置目标？\n在"建议"页面点击"我的目标"旁的"+"按钮。\n\n4. 如何联系客服？\n请发送邮件至 support@example.com');
+});
+
+document.getElementById('legal-item')?.addEventListener('click', ()=>{
+	alert('法律条款\n\n1. 隐私政策\n我们承诺保护您的财务数据安全，所有数据仅存储在本地。\n\n2. 使用条款\n本应用仅供个人财务管理使用，不得用于商业用途。\n\n3. 免责声明\n本应用不对因使用本应用而产生的任何财务损失负责。');
+});
+
+document.getElementById('logout-btn')?.addEventListener('click', ()=>{
+	if(confirm('确定要退出登录吗？')){
+		localStorage.clear();
+		alert('已退出登录，页面将刷新');
+		location.reload();
+	}
+});
+
+// 银行账户交互
+document.querySelectorAll('.flex.items-center.gap-4.p-4').forEach(item=>{
+	if(item.querySelector('img[alt*="Bank"]')){
+		item.style.cursor = 'pointer';
+		item.addEventListener('click', ()=>{
+			const bankName = item.querySelector('p.text-text-primary')?.textContent || '';
+			const status = item.querySelector('p.text-success, p.text-danger')?.textContent || '';
+			alert(`银行账户：${bankName}\n状态：${status}\n\n点击"确定"查看详情或进行管理。`);
+		});
+	}
+});
+
+document.querySelectorAll('button').forEach(btn=>{
+	if(btn.textContent.includes('添加新账户')){
+		btn.addEventListener('click', ()=>{
+			const bankName = prompt('请输入银行名称：', '');
+			if(bankName){
+				alert(`已添加账户：${bankName}\n\n注意：此功能为演示版本，实际账户添加功能需要后端支持。`);
+			}
+		});
+	}
+});
+</script>
+</div>
+
+<!-- 底部导航栏 -->
+<nav class="fixed bottom-0 left-0 right-0 z-10 mx-auto max-w-lg border-t border-slate-200/50 bg-background-light/90 backdrop-blur-sm">
+  <div class="flex h-16 justify-around">
+    <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../welcome/code.html">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="text-xs font-medium">首页</span>
+    </a>
+    <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../transaction_list/code.html">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span class="text-xs font-medium">账单</span>
+    </a>
+    <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../financial_advice/code.html">
+      <span class="material-symbols-outlined">auto_awesome</span>
+      <span class="text-xs font-medium">建议</span>
+    </a>
+    <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../visualization/code.html">
+      <span class="material-symbols-outlined">pie_chart</span>
+      <span class="text-xs font-medium">图表</span>
+    </a>
+    <a class="flex flex-1 flex-col items-center justify-center gap-1 font-bold text-primary" href="#">
+      <span class="material-symbols-outlined">person</span>
+      <span class="text-xs font-medium">我的</span>
+    </a>
+  </div>
+</nav>
+</body></html>

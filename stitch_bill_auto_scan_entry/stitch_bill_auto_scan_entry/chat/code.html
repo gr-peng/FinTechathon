@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI 记账助手</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#3B82F6", // A nice shade of blue
+            "background-light": "#F7FAFC",
+            "ai-bg": "#EFF6FF", // Light blue for AI messages
+            "user-bg": "#FFFFFF",
+            "cat-entertainment": "#8B5CF6", // Purple
+            "cat-food": "#EC4899", // Pink
+            "cat-travel": "#10B981", // Green
+            "cat-other": "#F59E0B" // Amber
+          },
+          fontFamily: {
+            "display": ["'Noto Sans SC'", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "1rem",
+            "lg": "1.5rem",
+            "xl": "2rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light font-display antialiased">
+<div class="relative flex min-h-screen w-full flex-col">
+<header class="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-background-light/80 px-4 backdrop-blur-sm">
+<div class="flex items-center gap-3">
+<div class="flex size-10 items-center justify-center rounded-full bg-primary text-white">
+<span class="material-symbols-outlined text-2xl">insights</span>
+</div>
+<div>
+<h1 class="text-base font-bold text-slate-900">AI 记账助手</h1>
+<div class="flex items-center gap-1.5">
+<div class="size-2 rounded-full bg-green-500"></div>
+<p class="text-xs text-slate-500">在线</p>
+</div>
+</div>
+</div>
+<div class="relative">
+<button id="more-btn" class="flex size-10 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+<div id="more-menu" class="absolute right-0 mt-2 hidden w-56 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+<button id="menu-clear" class="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">清空会话</button>
+<button id="menu-export" class="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">导出对话(JSON)</button>
+<button id="menu-set-api" class="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">设置后端地址</button>
+</div>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto px-4 py-6">
+<div id="chat-container" class="flex flex-col gap-6">
+<!-- 预设对话1 -->
+<div class="flex w-full max-w-md flex-col items-end self-end">
+<div class="rounded-xl rounded-br-none bg-primary p-4 text-white">
+<p class="text-base">今天中午买零食花了50块</p>
+</div>
+</div>
+<div class="flex w-full max-w-md flex-col items-start self-start">
+<div class="rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800">
+<p class="mb-3 text-base">好的，已为您记录一笔支出。</p>
+<div class="rounded-lg border border-slate-200 bg-white p-3">
+<h3 class="mb-2 text-sm font-bold text-slate-900">账单明细</h3>
+<div class="space-y-1 text-sm text-slate-600">
+<div class="flex justify-between"><span>类型</span><span>餐饮</span></div>
+<div class="flex justify-between"><span>金额</span><span>¥ 50.00</span></div>
+<div class="flex justify-between"><span>时间</span><span>今天 12:35</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 预设对话2 -->
+<div class="flex w-full max-w-md flex-col items-end self-end">
+<div class="rounded-xl rounded-br-none bg-primary p-4 text-white">
+<p class="text-base">昨天我都买了什么？</p>
+</div>
+</div>
+<div class="flex w-full max-w-md flex-col items-start self-start">
+<div class="rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800">
+<p class="mb-3 text-base">根据记录，您昨天有3笔支出：</p>
+<ul class="list-disc space-y-1 pl-5 text-sm text-slate-700">
+<li>交通（地铁）：¥ 8.00</li>
+<li>餐饮（午餐）：¥ 25.00</li>
+<li>购物（咖啡）：¥ 32.00</li>
+</ul>
+</div>
+</div>
+<!-- 预设对话3 -->
+<div class="flex w-full max-w-md flex-col items-end self-end">
+<div class="rounded-xl rounded-br-none bg-primary p-4 text-white">
+<p class="text-base">今年每个月支出情况</p>
+</div>
+</div>
+<div class="flex w-full max-w-lg flex-col items-start self-start">
+<div class="w-full rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800">
+<p class="mb-3 text-base">好的，这是您今年的月度支出图表：</p>
+<div class="rounded-lg border border-slate-200 bg-white p-4">
+<div class="mb-4 flex items-center justify-around text-xs text-slate-500">
+<div class="flex items-center gap-1.5"><div class="h-2 w-2 rounded-full bg-cat-entertainment"></div><span>娱乐</span></div>
+<div class="flex items-center gap-1.5"><div class="h-2 w-2 rounded-full bg-cat-food"></div><span>吃饭</span></div>
+<div class="flex items-center gap-1.5"><div class="h-2 w-2 rounded-full bg-cat-travel"></div><span>出行</span></div>
+<div class="flex items-center gap-1.5"><div class="h-2 w-2 rounded-full bg-cat-other"></div><span>其他</span></div>
+</div>
+<div class="flex h-48 items-end justify-around gap-2 border-b border-slate-200 pb-2">
+<div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+<div class="flex w-full flex-1 items-end gap-0.5" style="height: 80%"><div class="h-[25%] w-1/4 rounded-t bg-cat-entertainment"></div><div class="h-[40%] w-1/4 rounded-t bg-cat-food"></div><div class="h-[15%] w-1/4 rounded-t bg-cat-travel"></div><div class="h-[20%] w-1/4 rounded-t bg-cat-other"></div></div>
+</div>
+<div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+<div class="flex w-full flex-1 items-end gap-0.5" style="height: 90%"><div class="h-[10%] w-1/4 rounded-t bg-cat-entertainment"></div><div class="h-[50%] w-1/4 rounded-t bg-cat-food"></div><div class="h-[20%] w-1/4 rounded-t bg-cat-travel"></div><div class="h-[20%] w-1/4 rounded-t bg-cat-other"></div></div>
+</div>
+<div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+<div class="flex w-full flex-1 items-end gap-0.5" style="height: 95%"><div class="h-[35%] w-1/4 rounded-t bg-cat-entertainment"></div><div class="h-[25%] w-1/4 rounded-t bg-cat-food"></div><div class="h-[30%] w-1/4 rounded-t bg-cat-travel"></div><div class="h-[10%] w-1/4 rounded-t bg-cat-other"></div></div>
+</div>
+<div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+<div class="flex w-full flex-1 items-end gap-0.5" style="height: 75%"><div class="h-[20%] w-1/4 rounded-t bg-cat-entertainment"></div><div class="h-[30%] w-1/4 rounded-t bg-cat-food"></div><div class="h-[40%] w-1/4 rounded-t bg-cat-travel"></div><div class="h-[10%] w-1/4 rounded-t bg-cat-other"></div></div>
+</div>
+<div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+<div class="flex w-full flex-1 items-end gap-0.5" style="height: 85%"><div class="h-[15%] w-1/4 rounded-t bg-cat-entertainment"></div><div class="h-[45%] w-1/4 rounded-t bg-cat-food"></div><div class="h-[20%] w-1/4 rounded-t bg-cat-travel"></div><div class="h-[20%] w-1/4 rounded-t bg-cat-other"></div></div>
+</div>
+<div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+<div class="flex w-full flex-1 items-end gap-0.5" style="height: 100%"><div class="h-[30%] w-1/4 rounded-t bg-cat-entertainment"></div><div class="h-[30%] w-1/4 rounded-t bg-cat-food"></div><div class="h-[25%] w-1/4 rounded-t bg-cat-travel"></div><div class="h-[15%] w-1/4 rounded-t bg-cat-other"></div></div>
+</div>
+</div>
+<div class="flex justify-around pt-1">
+<span class="flex-1 text-center text-xs text-slate-500">1月</span>
+<span class="flex-1 text-center text-xs text-slate-500">2月</span>
+<span class="flex-1 text-center text-xs text-slate-500">3月</span>
+<span class="flex-1 text-center text-xs text-slate-500">4月</span>
+<span class="flex-1 text-center text-xs text-slate-500">5月</span>
+<span class="flex-1 text-center text-xs font-semibold text-primary">6月</span>
+</div>
+<p class="mt-4 rounded-md bg-slate-50 p-3 text-sm text-slate-600"><span class="font-bold text-slate-800">支出分析：</span>您6月份的支出总额为 <span class="font-semibold text-primary">¥3,250</span>，较5月有所下降。主要支出类别为<span class="font-semibold text-cat-food">吃饭</span>和<span class="font-semibold text-cat-entertainment">娱乐</span>。建议您留意非必要娱乐开销，以便更好地控制预算。</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="sticky bottom-0 bg-background-light/90 p-4 pt-2 backdrop-blur-sm">
+<div class="relative">
+<input id="chat-input" class="h-12 w-full rounded-full border border-slate-300 bg-white pl-12 pr-14 text-base text-slate-800 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="输入您的问题..." type="text"/>
+<div class="absolute inset-y-0 left-0 flex items-center pl-3">
+<div class="relative">
+<button id="plus-btn" class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 active:bg-slate-200">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+<div id="plus-menu" class="absolute left-0 bottom-full mb-2 hidden w-64 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm max-h-96 overflow-y-auto">
+<button id="upload-image-btn" class="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50 border-b border-slate-100">
+<span class="material-symbols-outlined text-base align-middle mr-2">image</span>上传图片识别
+</button>
+<button data-template="今天中午买零食花了50块" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">记录一笔支出</button>
+<button data-template="昨天我都买了什么？" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">查看昨日支出</button>
+<button data-template="这个月我的支出情况如何？" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">本月支出情况</button>
+<button data-template="帮我分析一下这个月的消费情况" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">本月消费分析</button>
+<button data-template="给我一些理财建议" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">理财建议</button>
+<button data-template="哪些类别的支出最多？" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">支出类别排行</button>
+<button data-template="我这个月存了多少钱？" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">本月储蓄情况</button>
+<button data-template="帮我制定一个省钱计划" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">制定省钱计划</button>
+<button data-template="最近有什么异常支出吗？" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">异常支出提醒</button>
+<button data-template="我的财务健康度如何？" class="tpl-item block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">财务健康评估</button>
+</div>
+</div>
+</div>
+<div class="absolute inset-y-0 right-0 flex items-center pr-2">
+<button id="send-btn" class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white transition-transform active:scale-90">
+<span class="material-symbols-outlined text-2xl">arrow_upward</span>
+</button>
+</div>
+</div>
+</footer>
+</div>
+<script>
+const API_BASE = (window.LOCAL_LLM_API || 'http://10.120.17.24:8010');
+const MAX_TOKENS_KEY = 'AI_BOOKKEEPER_MAX_NEW_TOKENS';
+function getMaxNewTokens() {
+	const v = Number(localStorage.getItem(MAX_TOKENS_KEY));
+	if (Number.isFinite(v) && v > 0 && v <= 4096) return v;
+	return 1024; // 默认更长，接近日常CLI体验
+}
+const chatContainer = document.getElementById('chat-container');
+const inputEl = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const moreBtn = document.getElementById('more-btn');
+const moreMenu = document.getElementById('more-menu');
+const plusBtn = document.getElementById('plus-btn');
+const plusMenu = document.getElementById('plus-menu');
+const menuClear = document.getElementById('menu-clear');
+const menuExport = document.getElementById('menu-export');
+const menuSetApi = document.getElementById('menu-set-api');
+
+let messages = [];
+let isSending = false;
+
+function appendUserBubble(text) {
+	const wrap = document.createElement('div');
+	wrap.className = 'flex w-full max-w-md flex-col items-end self-end';
+	wrap.innerHTML = '<div class="rounded-xl rounded-br-none bg-primary p-4 text-white"><p class="text-base"></p></div>';
+	wrap.querySelector('p').textContent = text;
+	chatContainer.appendChild(wrap);
+	wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function appendAIBubble(text) {
+	const wrap = document.createElement('div');
+	wrap.className = 'flex w-full max-w-md flex-col items-start self-start';
+	wrap.innerHTML = '<div class="rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800"><p class="text-base"></p></div>';
+	wrap.querySelector('p').textContent = text;
+	chatContainer.appendChild(wrap);
+	wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+let typingEl = null;
+function showTyping() {
+	if (typingEl) return;
+	typingEl = document.createElement('div');
+	typingEl.className = 'flex w-full max-w-md flex-col items-start self-start';
+	typingEl.innerHTML = '<div class="rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800"><p class="text-base">正在思考…</p></div>';
+	chatContainer.appendChild(typingEl);
+	typingEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+function hideTyping() {
+	if (!typingEl) return;
+	typingEl.remove();
+	typingEl = null;
+}
+
+async function sendMessage() {
+	const text = (inputEl.value || '').trim();
+	if (!text) return;
+	if (isSending) return;
+	isSending = true;
+	sendBtn.disabled = true;
+	inputEl.disabled = true;
+	inputEl.value = '';
+	appendUserBubble(text);
+	messages.push({ role: 'user', content: text });
+	showTyping();
+	try {
+		const res = await fetch(`${API_BASE}/chat`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				messages,
+				max_new_tokens: getMaxNewTokens(),
+				temperature: 0.7,
+				top_p: 0.9
+			})
+		});
+		if (!res.ok) throw new Error(await res.text());
+		const data = await res.json();
+		hideTyping();
+		appendAIBubble(data.reply || '');
+		messages.push({ role: 'assistant', content: data.reply || '' });
+	} catch (err) {
+		hideTyping();
+		appendAIBubble('请求失败：' + (err && err.message ? err.message : String(err)));
+	}
+	isSending = false;
+	sendBtn.disabled = false;
+	inputEl.disabled = false;
+}
+
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', (e) => {
+	if (e.key === 'Enter' && !e.shiftKey) {
+		e.preventDefault();
+		sendMessage();
+	}
+});
+
+// 菜单交互：更多
+function toggle(el) {
+	if (!el) return;
+	el.classList.toggle('hidden');
+}
+moreBtn?.addEventListener('click', (e) => {
+	e.stopPropagation();
+	toggle(moreMenu);
+});
+// 左侧加号菜单
+plusBtn?.addEventListener('click', (e) => {
+	e.stopPropagation();
+	toggle(plusMenu);
+});
+
+// 点击页面其他处关闭菜单
+document.addEventListener('click', () => {
+	moreMenu?.classList.add('hidden');
+	plusMenu?.classList.add('hidden');
+});
+
+// 图片上传功能
+const uploadImageBtn = document.getElementById('upload-image-btn');
+if (uploadImageBtn) {
+	uploadImageBtn.addEventListener('click', () => {
+		plusMenu.classList.add('hidden');
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'image/*';
+		input.onchange = async (e) => {
+			const file = e.target.files?.[0];
+			if (!file) return;
+			
+			// 显示上传中的用户消息
+			const userWrap = document.createElement('div');
+			userWrap.className = 'flex w-full max-w-md flex-col items-end self-end';
+			userWrap.innerHTML = `
+				<div class="rounded-xl rounded-br-none bg-primary p-4 text-white">
+					<div class="flex items-center gap-2">
+						<span class="material-symbols-outlined text-lg">image</span>
+						<p class="text-base">已上传图片</p>
+					</div>
+					<img src="${URL.createObjectURL(file)}" alt="上传的图片" class="mt-2 max-w-xs rounded-lg" />
+				</div>
+			`;
+			chatContainer.appendChild(userWrap);
+			userWrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+			
+			// 显示AI识别中
+			showTyping();
+			
+			try {
+				// 将图片转换为base64
+				const reader = new FileReader();
+				reader.onload = async () => {
+					const base64 = reader.result;
+					
+					// 调用后端API识别图片（这里使用模拟，实际需要后端支持）
+					// 模拟识别延迟
+					setTimeout(async () => {
+						hideTyping();
+						
+						// 模拟识别结果
+						const recognizedText = `识别到账单信息：\n- 商户：星巴克咖啡\n- 金额：¥ 48.00\n- 日期：${new Date().toLocaleDateString('zh-CN')}\n- 类别：餐饮`;
+						
+						appendAIBubble(recognizedText);
+						messages.push({ role: 'assistant', content: recognizedText });
+						
+						// 询问是否保存
+						const saveConfirm = confirm('是否保存这笔账单？');
+						if (saveConfirm) {
+							// 这里可以调用保存API
+							alert('账单已保存（功能待完善）');
+						}
+					}, 2000);
+				};
+				reader.readAsDataURL(file);
+			} catch (err) {
+				hideTyping();
+				appendAIBubble('图片识别失败：' + (err?.message || err));
+			}
+		};
+		input.click();
+	});
+}
+
+// 快捷模板插入
+document.querySelectorAll('#plus-menu .tpl-item').forEach(btn => {
+	btn.addEventListener('click', (e) => {
+		const t = e.currentTarget.getAttribute('data-template') || '';
+		inputEl.value = t;
+		plusMenu.classList.add('hidden');
+		inputEl.focus();
+	});
+});
+
+// 更多菜单：清空、导出、设置API
+menuClear?.addEventListener('click', () => {
+	messages = [];
+	chatContainer.innerHTML = '';
+	moreMenu.classList.add('hidden');
+});
+
+menuExport?.addEventListener('click', () => {
+	const blob = new Blob([JSON.stringify({ messages }, null, 2)], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'chat-export.json';
+	document.body.appendChild(a);
+	a.click();
+	URL.revokeObjectURL(url);
+	a.remove();
+	moreMenu.classList.add('hidden');
+});
+
+menuSetApi?.addEventListener('click', () => {
+	const currentApi = API_BASE;
+	const currentMax = getMaxNewTokens();
+	const v = prompt('设置后端地址（例如 http://10.120.17.24:8010 ）；当前最大生成长度为 ' + currentMax + '，如需修改请在下一步设置。', currentApi);
+	if (v) {
+		window.LOCAL_LLM_API = v;
+		const mt = prompt('设置最大生成长度（建议 512~2048）', String(currentMax));
+		if (mt) {
+			const num = Number(mt);
+			if (Number.isFinite(num) && num > 0) {
+				localStorage.setItem(MAX_TOKENS_KEY, String(Math.min(4096, Math.max(32, Math.floor(num)))));
+			}
+		}
+		location.reload();
+	}
+	moreMenu.classList.add('hidden');
+});
+</script>
+</body></html>
