@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>财务报告</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: "#2563EB",
+            accent: "#F97316",
+            "background-light": "#F3F4F6",
+          },
+          fontFamily: {
+            display: ["'Noto Sans SC'", "sans-serif"],
+          },
+          boxShadow: {
+            card: "0 20px 45px -20px rgba(15,23,42,0.25)",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .category-track {
+      height: 10px;
+    }
+    .modal-mask {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .chart-card canvas {
+      max-height: 220px !important;
+    }
+    .goal-card canvas {
+      max-height: 170px !important;
+    }
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body class="bg-background-light font-display text-slate-900">
+  <div class="relative mx-auto flex h-auto min-h-screen w-full max-w-lg flex-col overflow-x-hidden">
+    <header class="sticky top-0 z-10 flex items-center bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <div>
+        <p class="text-xs uppercase tracking-widest text-slate-500">AI 财务洞察</p>
+        <h1 class="text-xl font-bold text-slate-900">智能财务报告中心</h1>
+      </div>
+      <div class="ml-auto flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-600 shadow-inner">
+        <span class="material-symbols-outlined text-base text-emerald-500">verified</span>
+        数据自动更新
+      </div>
+    </header>
+
+    <main class="flex-1 space-y-6 px-4 pb-32 pt-6">
+      <section class="rounded-2xl bg-white p-4 shadow-card">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p class="text-xs uppercase tracking-widest text-slate-500">数据范围</p>
+            <p id="range-text" class="text-lg font-semibold text-slate-900">--</p>
+          </div>
+          <div class="flex w-full flex-1 items-center justify-start gap-2 rounded-full bg-slate-100 p-1 text-sm font-medium text-slate-500 sm:max-w-sm">
+            <label class="flex flex-1 cursor-pointer items-center justify-center rounded-full px-3 py-1 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+              <input class="sr-only" type="radio" name="time-period" value="week" checked />
+              周
+            </label>
+            <label class="flex flex-1 cursor-pointer items-center justify-center rounded-full px-3 py-1 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+              <input class="sr-only" type="radio" name="time-period" value="month" />
+              月
+            </label>
+            <label class="flex flex-1 cursor-pointer items-center justify-center rounded-full px-3 py-1 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+              <input class="sr-only" type="radio" name="time-period" value="year" />
+              年
+            </label>
+            <label class="flex flex-1 cursor-pointer items-center justify-center rounded-full px-3 py-1 transition has-[:checked]:bg-primary has-[:checked]:text-white">
+              <input class="sr-only" type="radio" name="time-period" value="custom" />
+              自定义
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section id="custom-controls" class="hidden rounded-2xl bg-white p-4 shadow-card">
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label class="text-xs font-medium text-slate-500">开始日期</label>
+            <input id="custom-start" type="date" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500">结束日期</label>
+            <input id="custom-end" type="date" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+          </div>
+          <div class="flex items-end">
+            <button id="custom-apply" class="w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">应用区间</button>
+          </div>
+        </div>
+        <p class="mt-2 text-xs text-slate-500">当跨度 ≤31 天按日展示，≤180 天按周展示，其余按月展示。</p>
+      </section>
+
+      <section class="grid gap-4 lg:grid-cols-3">
+        <div class="chart-card rounded-2xl bg-white p-4 shadow-card lg:col-span-2">
+          <div class="mb-3 flex items-center justify-between">
+            <div>
+              <p class="text-base font-semibold text-slate-900">收入 / 支出趋势</p>
+              <p id="bar-subtitle" class="text-xs text-slate-500">按天展示</p>
+            </div>
+            <span id="bar-unit" class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">--</span>
+          </div>
+          <canvas id="bar-chart" height="200"></canvas>
+        </div>
+        <div class="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-card">
+          <div>
+            <p class="text-sm font-medium text-slate-500">本期净储蓄</p>
+            <p id="net-current" class="text-xl font-bold text-slate-900">--</p>
+            <p id="net-diff" class="text-xs font-medium">--</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-3">
+            <p class="text-xs text-slate-500">收入 / 支出</p>
+            <p id="income-expense" class="text-lg font-semibold text-slate-900">--</p>
+          </div>
+          <div class="space-y-1 text-sm text-slate-600">
+            <div class="flex items-center justify-between">
+              <span>总收入</span>
+              <span id="summary-income" class="font-semibold text-emerald-600">--</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>总支出</span>
+              <span id="summary-expense" class="font-semibold text-rose-600">--</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl bg-white p-4 shadow-card">
+        <div class="mb-3 flex items-center justify-between">
+            <div>
+              <p class="text-base font-semibold text-slate-900">支出明细对比</p>
+              <p class="text-xs text-slate-500">蓝色表示上一周期，红色表示本周期</p>
+            </div>
+        </div>
+        <div id="category-bars" class="space-y-4"></div>
+      </section>
+
+      <section class="grid gap-4 lg:grid-cols-2">
+        <div class="chart-card rounded-2xl bg-white p-4 shadow-card">
+          <div class="mb-3 flex items-center justify-between">
+            <p class="text-base font-semibold text-slate-900">支出类别占比</p>
+            <span class="text-xs text-slate-500">饼图</span>
+          </div>
+          <canvas id="pie-chart" height="220"></canvas>
+          <p id="pie-empty" class="mt-4 hidden text-center text-sm text-slate-500">暂无分类数据</p>
+        </div>
+        <div class="goal-card rounded-2xl bg-white p-4 shadow-card">
+          <div class="mb-3 flex items-center justify-between">
+            <div>
+              <p class="text-base font-semibold text-slate-900">储蓄目标</p>
+              <p class="text-xs text-slate-500">根据目标与净储蓄实时计算</p>
+            </div>
+            <button id="goal-btn" class="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
+              <span class="material-symbols-outlined text-base">savings</span>
+              设置储蓄目标
+            </button>
+          </div>
+          <div class="flex flex-col items-center justify-center gap-4">
+            <canvas id="goal-chart" height="180"></canvas>
+            <div id="goal-info" class="text-center text-sm text-slate-600">尚未设置目标</div>
+            <button id="goal-manual" class="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 hover:border-primary hover:text-primary">手动存钱</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="loading-state" class="hidden rounded-2xl border border-dashed border-slate-300 bg-white/80 p-6 text-center text-sm text-slate-500">
+        正在加载账单数据...
+      </section>
+      <section id="error-state" class="hidden rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 p-6 text-center text-sm text-rose-600">
+        无法获取财务报告，请稍后重试。
+      </section>
+    </main>
+  </div>
+
+  <div id="goal-modal" class="modal-mask fixed inset-0 z-50 hidden items-center justify-center px-4">
+    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-card">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-slate-900">设置储蓄目标</h3>
+        <button id="goal-cancel" class="text-slate-400 hover:text-slate-600">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form id="goal-form" class="space-y-4">
+        <div>
+          <label class="text-sm font-medium text-slate-600">目标名称</label>
+          <input id="goal-name" required class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="例如：旅行基金" />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-600">目标金额 (¥)</label>
+          <input id="goal-target" required type="number" min="1" step="0.01" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="text-sm font-medium text-slate-600">自动存钱周期</label>
+            <select id="goal-cycle" class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option value="week">周</option>
+              <option value="month" selected>月</option>
+              <option value="year">年</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-600">每周期存入净储蓄百分比</label>
+            <div class="flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2">
+              <input id="goal-percent" type="number" min="1" max="100" value="20" class="w-full border-none bg-transparent text-sm focus:ring-0" />
+              <span class="text-sm text-slate-500">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" id="goal-dismiss" class="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-500">取消</button>
+          <button type="submit" class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = 'AI_BOOKKEEPER_API';
+    const API_BASE = window.LOCAL_LLM_API || localStorage.getItem(API_KEY) || 'http://10.120.17.24:8010';
+    const GOAL_KEY = 'VISUALIZATION_GOAL';
+
+    const rangeText = document.getElementById('range-text');
+    const barSubtitle = document.getElementById('bar-subtitle');
+    const barUnit = document.getElementById('bar-unit');
+    const netCurrent = document.getElementById('net-current');
+    const netDiff = document.getElementById('net-diff');
+    const incomeExpense = document.getElementById('income-expense');
+    const summaryIncome = document.getElementById('summary-income');
+    const summaryExpense = document.getElementById('summary-expense');
+    const categoryBars = document.getElementById('category-bars');
+    const pieEmpty = document.getElementById('pie-empty');
+    const loadingState = document.getElementById('loading-state');
+    const errorState = document.getElementById('error-state');
+    const customControls = document.getElementById('custom-controls');
+    const customStart = document.getElementById('custom-start');
+    const customEnd = document.getElementById('custom-end');
+    const customApply = document.getElementById('custom-apply');
+
+    const goalBtn = document.getElementById('goal-btn');
+    const goalModal = document.getElementById('goal-modal');
+    const goalCancel = document.getElementById('goal-cancel');
+    const goalDismiss = document.getElementById('goal-dismiss');
+    const goalForm = document.getElementById('goal-form');
+    const goalInfo = document.getElementById('goal-info');
+    const goalManualBtn = document.getElementById('goal-manual');
+
+    let reportData = null;
+    let currentPeriod = 'week';
+    let customReport = null;
+    let barChart = null;
+    let pieChart = null;
+    let goalChart = null;
+
+    const periodRadios = document.querySelectorAll('input[name="time-period"]');
+    periodRadios.forEach((input) => {
+      input.addEventListener('change', () => {
+        currentPeriod = input.value;
+        toggleCustomControls();
+        renderPeriod();
+        renderGoalCard();
+      });
+    });
+    toggleCustomControls();
+
+    goalBtn.addEventListener('click', () => goalModal.classList.remove('hidden'));
+    goalCancel.addEventListener('click', () => goalModal.classList.add('hidden'));
+    goalDismiss.addEventListener('click', () => goalModal.classList.add('hidden'));
+
+    goalForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const target = parseFloat(document.getElementById('goal-target').value);
+      const percent = parseFloat(document.getElementById('goal-percent').value);
+      if (!Number.isFinite(target) || target <= 0) {
+        alert('请输入有效的目标金额');
+        return;
+      }
+      if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
+        alert('请输入 1-100 之间的百分比');
+        return;
+      }
+      const goal = {
+        name: document.getElementById('goal-name').value || '储蓄目标',
+        target,
+        cycle: document.getElementById('goal-cycle').value,
+        percent,
+        manual: 0,
+      };
+      localStorage.setItem(GOAL_KEY, JSON.stringify(goal));
+      goalModal.classList.add('hidden');
+      renderGoalCard();
+    });
+
+    goalManualBtn.addEventListener('click', () => {
+      const goal = getGoal();
+      if (!goal) {
+        alert('请先设置储蓄目标');
+        return;
+      }
+      const amountStr = prompt('请输入本次手动存入金额 (¥)：', '');
+      if (!amountStr) return;
+      const amount = parseFloat(amountStr);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert('请输入有效的金额');
+        return;
+      }
+      goal.manual = (goal.manual || 0) + amount;
+      localStorage.setItem(GOAL_KEY, JSON.stringify(goal));
+      renderGoalCard();
+      alert(`已手动存入 ${formatCurrency(amount)}，累计手动存入 ${formatCurrency(goal.manual || 0)}`);
+    });
+
+    function formatCurrency(value) {
+      return `¥${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    customApply.addEventListener('click', () => {
+      const start = customStart.value;
+      const end = customEnd.value;
+      if (!start || !end) {
+        alert('请选择开始和结束日期');
+        return;
+      }
+      fetchCustomReport(start, end);
+    });
+
+    function toggleCustomControls() {
+      if (!customControls) return;
+      if (currentPeriod === 'custom') {
+        customControls.classList.remove('hidden');
+      } else {
+        customControls.classList.add('hidden');
+      }
+    }
+
+    async function fetchReports() {
+      loadingState.classList.remove('hidden');
+      errorState.classList.add('hidden');
+      try {
+        const res = await fetch(`${API_BASE}/reports/aggregate`);
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+        reportData = await res.json();
+        renderPeriod();
+        renderGoalCard();
+      } catch (err) {
+        console.error(err);
+        errorState.classList.remove('hidden');
+      } finally {
+        loadingState.classList.add('hidden');
+      }
+    }
+
+    async function fetchCustomReport(start, end) {
+      customApply.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/reports/aggregate?start_date=${start}&end_date=${end}`);
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        customReport = data.custom;
+        renderPeriod();
+      } catch (err) {
+        alert('自定义报表加载失败：' + err.message);
+      } finally {
+        customApply.disabled = false;
+      }
+    }
+
+    function renderPeriod() {
+      const data = currentPeriod === 'custom' ? customReport : reportData?.[currentPeriod];
+      if (!data) {
+        rangeText.textContent = currentPeriod === 'custom' ? '请选择自定义区间并点击应用' : '--';
+        renderBarChart({ labels: [], income: [], expense: [] });
+        renderCategoryBars([]);
+        renderPieChart([]);
+        netCurrent.textContent = '--';
+        netDiff.textContent = '--';
+        summaryIncome.textContent = '--';
+        summaryExpense.textContent = '--';
+        incomeExpense.textContent = '--';
+        return;
+      }
+      rangeText.textContent = data.range || '--';
+      barSubtitle.textContent = `按${data.bars?.unit || '--'}展示`;
+      barUnit.textContent = data.bars?.unit ? `每${data.bars.unit}` : '--';
+      netCurrent.textContent = formatCurrency(data.net?.current || 0);
+      const diff = data.net?.difference || 0;
+      const diffText = diff >= 0 ? `↑ ${formatCurrency(diff)}` : `↓ ${formatCurrency(Math.abs(diff))}`;
+      netDiff.textContent = `相比上一周期 ${diffText}`;
+      netDiff.className = diff >= 0 ? 'text-xs font-semibold text-emerald-600' : 'text-xs font-semibold text-rose-600';
+      summaryIncome.textContent = formatCurrency(data.summary?.income_total || 0);
+      summaryExpense.textContent = formatCurrency(data.summary?.expense_total || 0);
+      incomeExpense.textContent = `${formatCurrency(data.summary?.income_total || 0)} / ${formatCurrency(data.summary?.expense_total || 0)}`;
+
+      renderBarChart(data.bars);
+      renderCategoryBars(data.categories || []);
+      renderPieChart(data.pie || []);
+    }
+
+    function renderBarChart(bars = { labels: [], income: [], expense: [] }) {
+      const ctx = document.getElementById('bar-chart');
+      if (!ctx) return;
+      if (barChart) barChart.destroy();
+      barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: bars.labels || [],
+          datasets: [
+            {
+              label: '收入',
+              data: bars.income || [],
+              backgroundColor: 'rgba(34,197,94,0.6)',
+              borderRadius: 6,
+            },
+            {
+              label: '支出',
+              data: bars.expense || [],
+              backgroundColor: 'rgba(248,113,113,0.7)',
+              borderRadius: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' },
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: { ticks: { callback: (value) => `¥${value}` } },
+          },
+        },
+      });
+    }
+
+    function renderCategoryBars(items) {
+      if (!categoryBars) return;
+      if (!items.length) {
+        categoryBars.innerHTML = '<p class="text-sm text-slate-500">暂无分类数据</p>';
+        return;
+      }
+      const maxValue = Math.max(...items.map((item) => Math.max(item.current || 0, item.previous || 0)), 1);
+      categoryBars.innerHTML = items
+        .map((item) => {
+          const currentWidth = Math.min(100, ((item.current || 0) / maxValue) * 100);
+          const previousWidth = Math.min(100, ((item.previous || 0) / maxValue) * 100);
+          const diff = (item.current || 0) - (item.previous || 0);
+          const diffText = diff >= 0 ? `↑ ¥${diff.toFixed(2)}` : `↓ ¥${Math.abs(diff).toFixed(2)}`;
+          const diffColor = diff >= 0 ? 'text-rose-600' : 'text-emerald-600';
+          return `
+            <div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="font-medium text-slate-700">${item.name}</div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                  <span>${formatCurrency(item.current || 0)}</span>
+                  <span class="${diffColor} font-semibold">${diffText}</span>
+                </div>
+              </div>
+              <div class="mt-2 space-y-1">
+                <div class="relative h-2 rounded-full bg-rose-100">
+                  <div class="absolute inset-y-0 left-0 rounded-full bg-rose-400/80" style="width:${currentWidth}%"></div>
+                </div>
+                <div class="relative h-2 rounded-full bg-blue-100">
+                  <div class="absolute inset-y-0 left-0 rounded-full bg-blue-400/80" style="width:${previousWidth}%"></div>
+                </div>
+              </div>
+              <div class="mt-1 flex justify-between text-xs text-slate-500">
+                <span class="text-rose-500">本期：${formatCurrency(item.current || 0)}</span>
+                <span class="text-blue-500">上期：${formatCurrency(item.previous || 0)}</span>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    function renderPieChart(data) {
+      const ctx = document.getElementById('pie-chart');
+      if (!ctx) return;
+      if (pieChart) {
+        pieChart.destroy();
+        pieChart = null;
+      }
+      if (!data.length) {
+        ctx.classList.add('hidden');
+        if (pieEmpty) pieEmpty.classList.remove('hidden');
+        return;
+      }
+      ctx.classList.remove('hidden');
+      if (pieEmpty) pieEmpty.classList.add('hidden');
+      pieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: data.map((d) => d.name),
+          datasets: [
+            {
+              data: data.map((d) => d.value),
+              backgroundColor: ['#2563EB', '#60A5FA', '#34D399', '#FBBF24', '#F87171', '#94A3B8'],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+        },
+      });
+    }
+
+    function getGoal() {
+      const stored = localStorage.getItem(GOAL_KEY);
+      if (!stored) return null;
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return null;
+      }
+    }
+
+    function renderGoalCard() {
+      const goal = getGoal();
+      if (!goal || !reportData) {
+        goalInfo.textContent = '尚未设置目标';
+        if (goalChart) {
+          goalChart.destroy();
+          goalChart = null;
+        }
+        return;
+      }
+      const periodData = reportData[goal.cycle];
+      if (!periodData) {
+        goalInfo.textContent = '当前周期暂无数据';
+        if (goalChart) {
+          goalChart.destroy();
+          goalChart = null;
+        }
+        return;
+      }
+      const currentNet = periodData.net?.current || 0;
+      const autoDeposit = Math.max(0, currentNet * (goal.percent / 100));
+      const manualSaved = goal.manual || 0;
+      const progress = Math.min(goal.target, autoDeposit + manualSaved);
+      const remaining = Math.max(goal.target - progress, 0);
+      goalInfo.innerHTML = `
+        <p class="text-base font-semibold text-slate-900">${goal.name}</p>
+        <p class="text-sm text-slate-600">周期：${goal.cycle === 'week' ? '周' : goal.cycle === 'month' ? '月' : '年'} · 占净储蓄 ${goal.percent}%</p>
+        <p class="text-sm text-slate-600">本周期自动存入 <span class="font-semibold text-primary">${formatCurrency(autoDeposit)}</span></p>
+        <p class="text-sm text-slate-600">手动存入累计 <span class="font-semibold text-primary">${formatCurrency(manualSaved)}</span></p>
+      `;
+      const ctx = document.getElementById('goal-chart');
+      if (goalChart) goalChart.destroy();
+      goalChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['已存', '剩余'],
+          datasets: [
+            {
+              data: [progress, remaining],
+              backgroundColor: ['#2563EB', '#E2E8F0'],
+              borderWidth: 0,
+              cutout: '70%',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+        },
+      });
+    }
+
+    fetchReports();
+  </script>
+  
+  <!-- 底部导航栏 -->
+  <nav class="fixed bottom-0 left-0 right-0 z-10 mx-auto max-w-lg border-t border-slate-200/50 bg-background-light/90 backdrop-blur-sm">
+    <div class="flex h-16 justify-around">
+      <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../welcome/code.html">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span class="text-xs font-medium">首页</span>
+      </a>
+      <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../transaction_list/code.html">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span class="text-xs font-medium">账单</span>
+      </a>
+      <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../financial_advice/code.html">
+        <span class="material-symbols-outlined">auto_awesome</span>
+        <span class="text-xs font-medium">建议</span>
+      </a>
+      <a class="flex flex-1 flex-col items-center justify-center gap-1 font-bold text-primary" href="#">
+        <span class="material-symbols-outlined">pie_chart</span>
+        <span class="text-xs font-medium">图表</span>
+      </a>
+      <a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500/70 hover:text-primary" href="../settings/code.html">
+        <span class="material-symbols-outlined">person</span>
+        <span class="text-xs font-medium">我的</span>
+      </a>
+    </div>
+  </nav>
+</body>
+</html>

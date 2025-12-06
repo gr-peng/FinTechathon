@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI 投资助手</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#4F46E5", // Indigo for trader
+            "background-light": "#F7FAFC",
+            "ai-bg": "#EEF2FF", // Light indigo for AI messages
+            "user-bg": "#FFFFFF",
+          },
+          fontFamily: {
+            "display": ["'Noto Sans SC'", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "1rem",
+            "lg": "1.5rem",
+            "xl": "2rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+  </head>
+<body class="bg-background-light font-display antialiased">
+<div class="relative mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
+<header class="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-background-light/80 px-4 backdrop-blur-sm">
+<div class="flex items-center gap-3">
+<div class="flex size-10 items-center justify-center rounded-full bg-primary text-white">
+<span class="material-symbols-outlined text-2xl">query_stats</span>
+</div>
+<div>
+<h1 class="text-base font-bold text-slate-900">AI 投资助手</h1>
+<div class="flex items-center gap-1.5">
+<div class="size-2 rounded-full bg-green-500"></div>
+<p class="text-xs text-slate-500">在线</p>
+</div>
+</div>
+</div>
+<div class="relative">
+<button id="more-btn" class="flex size-10 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+<div id="more-menu" class="absolute right-0 mt-2 hidden w-56 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+<button id="menu-clear" class="block w-full px-4 py-2 text-left text-sm hover:bg-slate-50">清空会话</button>
+</div>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto px-4 py-6">
+<div id="chat-container" class="flex flex-col gap-6">
+<!-- 预设对话 -->
+<div class="flex w-full max-w-md flex-col items-start self-start">
+<div class="rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800">
+<p class="text-base">您好！我是您的 AI 投资助手。我可以帮您分析市场趋势、解读投资组合或回答金融相关问题。</p>
+</div>
+</div>
+</div>
+</main>
+<footer class="sticky bottom-0 bg-background-light/90 p-4 pt-2 backdrop-blur-sm">
+<div class="relative space-y-3">
+<div id="preset-panel" class="hidden rounded-2xl border border-slate-200 bg-white/95 shadow-xl">
+<div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+<p class="text-sm font-semibold text-slate-800">选择预设问题</p>
+<button id="preset-close" class="rounded-full p-1 text-slate-500 transition-colors hover:bg-slate-100">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<div id="preset-list" class="max-h-72 overflow-y-auto py-2"></div>
+</div>
+<div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2 shadow-sm">
+<button id="preset-btn" class="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 active:scale-95">
+<span class="material-symbols-outlined text-2xl">add</span>
+</button>
+<div class="relative flex-1">
+<input id="chat-input" class="h-12 w-full rounded-full border border-slate-300 bg-white pl-4 pr-14 text-base text-slate-800 placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="输入您的问题..." type="text"/>
+<div class="absolute inset-y-0 right-0 flex items-center pr-2">
+<button id="send-btn" class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white transition-transform active:scale-90">
+<span class="material-symbols-outlined text-2xl">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+ </footer>
+
+ <nav class="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/60 bg-background-light/95 backdrop-blur-md">
+	<div class="mx-auto flex max-w-md items-stretch justify-between px-2">
+		<a href="../welcome/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+			<span class="material-symbols-outlined text-xl">home</span>
+			<span class="text-[11px] font-semibold">开始</span>
+		</a>
+		<a href="../risk/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+			<span class="material-symbols-outlined text-xl">shield_person</span>
+			<span class="text-[11px] font-semibold">风险评估</span>
+		</a>
+		<a href="../report/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+			<span class="material-symbols-outlined text-xl">analytics</span>
+			<span class="text-[11px] font-semibold">智能投资</span>
+		</a>
+		<a href="../trader_chat/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-primary">
+			<span class="material-symbols-outlined text-xl">forum</span>
+			<span class="text-[11px] font-semibold">金融问答</span>
+		</a>
+		<a href="../visual/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+			<span class="material-symbols-outlined text-xl">dashboard</span>
+			<span class="text-[11px] font-semibold">仪表盘</span>
+		</a>
+	</div>
+</nav>
+</div>
+<script>
+const PRESET_QA_URL = './qa.json';
+const chatContainer = document.getElementById('chat-container');
+const inputEl = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const moreBtn = document.getElementById('more-btn');
+const moreMenu = document.getElementById('more-menu');
+const menuClear = document.getElementById('menu-clear');
+const presetBtn = document.getElementById('preset-btn');
+const presetPanel = document.getElementById('preset-panel');
+const presetList = document.getElementById('preset-list');
+const presetClose = document.getElementById('preset-close');
+
+let messages = [];
+let isSending = false;
+let presetQA = [];
+
+function appendUserBubble(text) {
+	const wrap = document.createElement('div');
+	wrap.className = 'flex w-full max-w-md flex-col items-end self-end';
+	wrap.innerHTML = '<div class="rounded-xl rounded-br-none bg-primary p-4 text-white"><p class="text-base"></p></div>';
+	wrap.querySelector('p').textContent = text;
+	chatContainer.appendChild(wrap);
+	wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function appendAIBubble(text) {
+	const wrap = document.createElement('div');
+	wrap.className = 'flex w-full max-w-md flex-col items-start self-start';
+	wrap.innerHTML = '<div class="rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800"><p class="text-base"></p></div>';
+	wrap.querySelector('p').textContent = text;
+	chatContainer.appendChild(wrap);
+	wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function renderPresetList(items = []) {
+	if (!presetList) return;
+	presetList.innerHTML = '';
+	if (!items.length) {
+		const empty = document.createElement('div');
+		empty.className = 'px-4 py-6 text-center text-sm text-slate-500';
+		empty.textContent = '暂未加载预设问题';
+		presetList.appendChild(empty);
+		return;
+	}
+	items.forEach((item) => {
+		const btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-slate-50';
+		btn.innerHTML = `
+			<span class="material-symbols-outlined text-primary text-base mt-0.5">bolt</span>
+			<div>
+				<p class="text-sm font-medium text-slate-900">${item.question}</p>
+				<p class="text-xs text-slate-500 mt-1">点击自动获取答案</p>
+			</div>
+		`;
+		btn.addEventListener('click', () => handlePresetSelection(item));
+		presetList.appendChild(btn);
+	});
+}
+
+function handlePresetSelection(item) {
+	if (!item || isSending) return;
+	setPresetPanelVisible(false);
+	isSending = true;
+	sendBtn.disabled = true;
+	inputEl.disabled = true;
+	startExchange(item.question, item.answer);
+}
+
+function setPresetPanelVisible(visible) {
+	if (!presetPanel) return;
+	if (visible) {
+		presetPanel.classList.remove('hidden');
+	} else {
+		presetPanel.classList.add('hidden');
+	}
+}
+
+async function loadPresetQA() {
+	try {
+		const res = await fetch(PRESET_QA_URL);
+		if (!res.ok) throw new Error('预设问题加载失败');
+		presetQA = await res.json();
+		renderPresetList(presetQA);
+	} catch (err) {
+		console.error(err);
+		renderPresetList([]);
+	}
+}
+
+function findPresetByQuestion(question) {
+	return presetQA.find((item) => item.question === question);
+}
+
+function startExchange(question, answer) {
+	if (!question) {
+		isSending = false;
+		sendBtn.disabled = false;
+		inputEl.disabled = false;
+		return;
+	}
+	const replyText = answer || '本演示场景仅支持左侧预设问题，请点击“+”按钮体验。';
+	appendUserBubble(question);
+	messages.push({ role: 'user', content: question });
+	showTyping();
+	const delay = 800 + Math.random() * 700;
+	setTimeout(() => {
+		hideTyping();
+		appendAIBubble(replyText);
+		messages.push({ role: 'assistant', content: replyText });
+		isSending = false;
+		sendBtn.disabled = false;
+		inputEl.disabled = false;
+	}, delay);
+}
+
+let typingEl = null;
+function showTyping() {
+	if (typingEl) return;
+	typingEl = document.createElement('div');
+	typingEl.className = 'flex w-full max-w-md flex-col items-start self-start';
+	typingEl.innerHTML = '<div class="rounded-xl rounded-bl-none bg-ai-bg p-4 text-slate-800"><p class="text-base">正在思考…</p></div>';
+	chatContainer.appendChild(typingEl);
+	typingEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+function hideTyping() {
+	if (!typingEl) return;
+	typingEl.remove();
+	typingEl = null;
+}
+
+function sendMessage() {
+	const text = (inputEl.value || '').trim();
+	if (!text || isSending) return;
+	inputEl.value = '';
+	isSending = true;
+	sendBtn.disabled = true;
+	inputEl.disabled = true;
+	const preset = findPresetByQuestion(text);
+	const answer = preset ? preset.answer : '本演示场景仅支持左侧预设问题，请点击“+”按钮选择问题。';
+	startExchange(text, answer);
+}
+
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', (e) => {
+	if (e.key === 'Enter' && !e.shiftKey) {
+		e.preventDefault();
+		sendMessage();
+	}
+});
+
+// 菜单交互
+function toggle(el) {
+	if (!el) return;
+	el.classList.toggle('hidden');
+}
+moreBtn?.addEventListener('click', (e) => {
+	e.stopPropagation();
+	toggle(moreMenu);
+});
+menuClear?.addEventListener('click', () => {
+    chatContainer.innerHTML = '';
+    messages = [];
+    moreMenu.classList.add('hidden');
+});
+
+presetBtn?.addEventListener('click', (e) => {
+	e.stopPropagation();
+	const shouldShow = presetPanel?.classList.contains('hidden');
+	setPresetPanelVisible(shouldShow);
+});
+presetClose?.addEventListener('click', (e) => {
+	e.stopPropagation();
+	setPresetPanelVisible(false);
+});
+presetPanel?.addEventListener('click', (e) => e.stopPropagation());
+
+document.addEventListener('click', () => {
+	moreMenu?.classList.add('hidden');
+	presetPanel?.classList.add('hidden');
+});
+
+loadPresetQA();
+</script>
+</body>
+</html>

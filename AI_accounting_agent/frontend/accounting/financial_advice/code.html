@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智能财务顾问</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0A84FF",
+            "background-light": "#F2F2F7",
+            "expense": "#FF3B30",
+            "income": "#34C759",
+            "neutral-text-light": "#1C1C1E",
+            "card-light": "#FFFFFF",
+            "subtle-light": "#E9E9EB",
+          },
+          fontFamily: {
+            "display": ["Noto Sans SC", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.75rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+      background-color: #F2F2F7;
+    }
+    .ai-output {
+      min-height: 120px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.7;
+      word-break: break-word;
+      transition: all 0.3s ease;
+    }
+    .ai-output.collapsed {
+      max-height: 60px;
+      overflow: hidden;
+      position: relative;
+    }
+    .ai-output.collapsed::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: linear-gradient(to bottom, transparent, rgba(242, 242, 247, 0.95));
+      pointer-events: none;
+    }
+    .collapse-toggle {
+      cursor: pointer;
+      user-select: none;
+    }
+    .collapse-toggle .expand-icon {
+      transition: transform 0.3s ease;
+    }
+    .collapse-toggle.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+    .tab-button {
+      transition: all 0.3s ease;
+    }
+    .tab-button.active {
+      background: #0A84FF;
+      color: white;
+      border-color: #0A84FF;
+    }
+    .view-container {
+      display: none;
+    }
+    .view-container.active {
+      display: block;
+    }
+    .chat-user-bubble {
+      background: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
+    }
+    .chat-ai-bubble {
+      background: #FFFFFF;
+    }
+  </style>
+</head>
+<body class="bg-background-light font-display text-neutral-text-light antialiased">
+  <div class="relative mx-auto flex h-auto min-h-screen w-full max-w-lg flex-col overflow-x-hidden">
+    <!-- Header -->
+    <header class="sticky top-0 z-10 flex items-center justify-between bg-background-light/80 p-4 pb-3 backdrop-blur-sm">
+      <div class="flex items-center gap-2">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
+          <span class="material-symbols-outlined text-white text-xl">account_balance</span>
+        </div>
+        <div>
+          <p class="text-xs uppercase tracking-widest text-neutral-text-light/60 flex items-center gap-1">
+            <span class="material-symbols-outlined text-xs">auto_awesome</span>
+            AI 财务洞察
+          </p>
+          <h1 class="text-lg font-bold text-neutral-text-light">智能财务顾问</h1>
+        </div>
+      </div>
+      <button id="refresh-context" class="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+        <span class="material-symbols-outlined text-base">refresh</span>
+        刷新
+      </button>
+    </header>
+
+    <!-- 切换按钮 -->
+    <div class="flex gap-2 px-4 pb-4 border-b border-subtle-light/50 bg-background-light/80">
+      <button id="tab-advice" class="tab-button active flex-1 rounded-full px-4 py-2 text-sm font-semibold border border-subtle-light flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-base">insights</span>
+        财务建议
+      </button>
+      <button id="tab-chat" class="tab-button flex-1 rounded-full px-4 py-2 text-sm font-semibold border border-subtle-light flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-base">chat_bubble</span>
+        AI 对话
+      </button>
+    </div>
+
+    <!-- Advice View -->
+    <main id="advice-view" class="view-container active flex-1 space-y-4 px-4 pb-32 pt-4">
+      <!-- Loading State -->
+      <section id="loading-state" class="hidden rounded-lg bg-card-light p-8 text-center text-sm text-neutral-text-light/60 shadow-sm">
+        <div class="flex flex-col items-center gap-3">
+          <span class="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
+          <p class="font-medium">正在加载财务数据...</p>
+        </div>
+      </section>
+
+      <!-- Error State -->
+      <section id="error-state" class="hidden rounded-lg bg-card-light p-6 text-sm text-expense shadow-sm border border-expense/20">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="material-symbols-outlined text-2xl">error_outline</span>
+          <p class="font-semibold text-lg">无法获取财务数据</p>
+        </div>
+        <div id="error-detail" class="mt-2 text-xs whitespace-pre-line text-left bg-background-light/50 rounded-lg p-3 font-mono border border-subtle-light"></div>
+        <p class="mt-3 text-xs text-neutral-text-light/60 text-center flex items-center justify-center gap-1">
+          <span class="material-symbols-outlined text-xs">link</span>
+          API 地址: <span id="error-api-url" class="font-mono text-expense"></span>
+        </p>
+        <div class="mt-4 text-center">
+          <button onclick="fetchContext()" class="rounded-full bg-expense px-5 py-2.5 text-sm font-semibold text-white hover:bg-expense/90 transition flex items-center gap-2 mx-auto">
+            <span class="material-symbols-outlined text-base">refresh</span>
+            重试
+          </button>
+        </div>
+      </section>
+
+      <!-- Data Snapshot -->
+      <section id="data-snapshot" class="hidden rounded-lg bg-card-light p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-teal-500">
+              <span class="material-symbols-outlined text-white text-xl">database</span>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-text-light/60 flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs">dashboard</span>
+                数据快照
+              </p>
+              <p id="context-range" class="text-lg font-semibold text-neutral-text-light">--</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs text-neutral-text-light/60">
+            <span class="rounded-full border border-subtle-light bg-background-light/50 px-3 py-1.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">storage</span>
+              数据源：server/data/bills.db
+            </span>
+            <span class="rounded-full border border-subtle-light bg-background-light/50 px-3 py-1.5 flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs">sync</span>
+              实时分析
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Overview Section -->
+      <section id="overview-section" class="hidden rounded-lg bg-card-light p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div class="flex items-center gap-2">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-indigo-500">
+              <span class="material-symbols-outlined text-white text-xl">insights</span>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-text-light/60">AI 总览</p>
+              <h2 class="text-lg font-bold text-neutral-text-light">财务状况概览</h2>
+              <p class="text-xs text-neutral-text-light/60">1-2 句话总结近期财务状况，指出最明显的变化</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button data-run="overview" class="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+              <span class="material-symbols-outlined text-base">sparkles</span>
+              生成概览
+            </button>
+            <button data-copy="overview" class="rounded-full border border-subtle-light px-3 py-2 text-xs text-neutral-text-light/60 hover:border-primary hover:text-primary hover:bg-primary/5 transition">复制</button>
+          </div>
+        </div>
+        <div id="overview-meta" class="grid gap-3 text-sm mb-4 sm:grid-cols-3"></div>
+        <div class="rounded-lg border border-subtle-light bg-background-light/50 overflow-hidden">
+          <div class="flex items-center justify-between p-3 bg-white/50 cursor-pointer collapse-toggle" data-toggle="overview">
+            <span class="text-xs font-semibold text-neutral-text-light/70 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">chat_bubble_outline</span>
+              AI 分析结果
+            </span>
+            <span class="material-symbols-outlined expand-icon text-sm text-neutral-text-light/60">expand_more</span>
+          </div>
+          <div id="overview-result" class="ai-output collapsed mt-0 rounded-none border-0 bg-background-light/50 p-4 text-sm text-neutral-text-light/80">等待生成 AI 概览…</div>
+        </div>
+      </section>
+
+      <!-- Behavior Section -->
+      <section id="behavior-section" class="hidden rounded-lg bg-card-light p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div class="flex items-center gap-2">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+              <span class="material-symbols-outlined text-white text-xl">psychology</span>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-text-light/60">AI 行为分析</p>
+              <h2 class="text-lg font-bold text-neutral-text-light">消费行为洞察</h2>
+              <p class="text-xs text-neutral-text-light/60">识别 90~180 天消费习惯、波动与潜在风险</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button data-run="behavior" class="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+              <span class="material-symbols-outlined text-base">travel_explore</span>
+              生成分析
+            </button>
+            <button data-copy="behavior" class="rounded-full border border-subtle-light px-3 py-2 text-xs text-neutral-text-light/60 hover:border-primary hover:text-primary hover:bg-primary/5 transition">复制</button>
+          </div>
+        </div>
+        <div id="behavior-meta" class="grid gap-3 text-sm mb-4 sm:grid-cols-3"></div>
+        <div class="rounded-lg border border-subtle-light bg-background-light/50 overflow-hidden">
+          <div class="flex items-center justify-between p-3 bg-white/50 cursor-pointer collapse-toggle" data-toggle="behavior">
+            <span class="text-xs font-semibold text-neutral-text-light/70 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">chat_bubble_outline</span>
+              AI 分析结果
+            </span>
+            <span class="material-symbols-outlined expand-icon text-sm text-neutral-text-light/60">expand_more</span>
+          </div>
+          <div id="behavior-result" class="ai-output collapsed mt-0 rounded-none border-0 bg-background-light/50 p-4 text-sm text-neutral-text-light/80">等待生成行为分析…</div>
+        </div>
+      </section>
+
+      <!-- Advice Section -->
+      <section id="advice-section" class="hidden rounded-lg bg-card-light p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div class="flex items-center gap-2">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-red-500">
+              <span class="material-symbols-outlined text-white text-xl">lightbulb</span>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-text-light/60">AI 财务建议中心</p>
+              <h2 class="text-lg font-bold text-neutral-text-light">个性化财务建议</h2>
+              <p class="text-xs text-neutral-text-light/60">基于收入/支出结构输出预算、储蓄和风险建议</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button data-run="advice" class="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
+              <span class="material-symbols-outlined text-base">insights</span>
+              生成建议
+            </button>
+            <button data-copy="advice" class="rounded-full border border-subtle-light px-3 py-2 text-xs text-neutral-text-light/60 hover:border-primary hover:text-primary hover:bg-primary/5 transition">复制</button>
+          </div>
+        </div>
+        <div id="advice-meta" class="grid gap-3 text-sm mb-4 sm:grid-cols-3"></div>
+        <div class="rounded-lg border border-subtle-light bg-background-light/50 overflow-hidden">
+          <div class="flex items-center justify-between p-3 bg-white/50 cursor-pointer collapse-toggle" data-toggle="advice">
+            <span class="text-xs font-semibold text-neutral-text-light/70 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">chat_bubble_outline</span>
+              AI 分析结果
+            </span>
+            <span class="material-symbols-outlined expand-icon text-sm text-neutral-text-light/60">expand_more</span>
+          </div>
+          <div id="advice-result" class="ai-output collapsed mt-0 rounded-none border-0 bg-background-light/50 p-4 text-sm text-neutral-text-light/80">等待生成财务建议…</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Chat View -->
+    <main id="chat-view" class="view-container flex-1 flex flex-col overflow-hidden">
+      <header class="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-subtle-light/50 bg-background-light/80 px-4 backdrop-blur-sm">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
+            <span class="material-symbols-outlined text-xl text-white">insights</span>
+          </div>
+          <div>
+            <h1 class="text-base font-bold text-neutral-text-light">AI 记账助手</h1>
+            <div class="flex items-center gap-1.5">
+              <div class="h-2 w-2 rounded-full bg-income"></div>
+              <p class="text-xs text-neutral-text-light/60">在线</p>
+            </div>
+          </div>
+        </div>
+        <div class="relative">
+          <button id="more-btn" class="flex h-10 w-10 items-center justify-center rounded-full text-neutral-text-light/60 transition-colors hover:bg-subtle-light active:bg-subtle-light/80">
+            <span class="material-symbols-outlined">more_horiz</span>
+          </button>
+          <div id="more-menu" class="absolute right-0 mt-2 hidden w-56 overflow-hidden rounded-lg border border-subtle-light bg-card-light shadow-sm z-20">
+            <button id="menu-clear" class="block w-full px-4 py-2 text-left text-sm text-neutral-text-light hover:bg-background-light">清空会话</button>
+            <button id="menu-export" class="block w-full px-4 py-2 text-left text-sm text-neutral-text-light hover:bg-background-light">导出对话(JSON)</button>
+            <button id="menu-set-api" class="block w-full px-4 py-2 text-left text-sm text-neutral-text-light hover:bg-background-light">设置后端地址</button>
+          </div>
+        </div>
+      </header>
+      <div id="chat-container" class="flex-1 overflow-y-auto px-4 min-h-0" style="padding-top: 2rem; padding-bottom: calc(8rem + env(safe-area-inset-bottom));">
+        <div id="chat-container-inner" class="flex flex-col gap-6 pb-4">
+          <!-- 预设对话1 -->
+          <div class="flex w-full max-w-lg flex-col items-end self-end mt-2">
+            <div class="rounded-xl rounded-br-none chat-user-bubble p-4 text-white shadow-sm">
+              <p class="text-base leading-relaxed">今天中午买零食花了50块</p>
+            </div>
+          </div>
+          <div class="flex w-full max-w-lg flex-col items-start self-start mt-2">
+            <div class="rounded-xl rounded-bl-none chat-ai-bubble p-4 text-neutral-text-light shadow-sm border border-subtle-light">
+              <p class="mb-3 text-base leading-relaxed">好的，已为您记录一笔支出。</p>
+              <div class="rounded-lg border border-subtle-light bg-background-light/50 p-3">
+                <h3 class="mb-2 text-sm font-bold text-neutral-text-light">账单明细</h3>
+                <div class="space-y-1 text-sm text-neutral-text-light/80">
+                  <div class="flex justify-between"><span>类型</span><span>餐饮</span></div>
+                  <div class="flex justify-between"><span>金额</span><span>¥ 50.00</span></div>
+                  <div class="flex justify-between"><span>时间</span><span>今天 12:35</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 预设对话2 -->
+          <div class="flex w-full max-w-lg flex-col items-end self-end mt-2">
+            <div class="rounded-xl rounded-br-none chat-user-bubble p-4 text-white shadow-sm">
+              <p class="text-base leading-relaxed">昨天我都买了什么？</p>
+            </div>
+          </div>
+          <div class="flex w-full max-w-lg flex-col items-start self-start mt-2">
+            <div class="rounded-xl rounded-bl-none chat-ai-bubble p-4 text-neutral-text-light shadow-sm border border-subtle-light">
+              <p class="mb-3 text-base leading-relaxed">根据记录，您昨天有3笔支出：</p>
+              <ul class="list-disc space-y-1 pl-5 text-sm text-neutral-text-light/80">
+                <li>交通（地铁）：¥ 8.00</li>
+                <li>餐饮（午餐）：¥ 25.00</li>
+                <li>购物（咖啡）：¥ 32.00</li>
+              </ul>
+            </div>
+          </div>
+          <!-- 预设对话3 -->
+          <div class="flex w-full max-w-lg flex-col items-end self-end mt-2">
+            <div class="rounded-xl rounded-br-none chat-user-bubble p-4 text-white shadow-sm">
+              <p class="text-base leading-relaxed">今年每个月支出情况</p>
+            </div>
+          </div>
+          <div class="flex w-full max-w-lg flex-col items-start self-start mt-2">
+            <div class="rounded-xl rounded-bl-none chat-ai-bubble p-4 text-neutral-text-light shadow-sm border border-subtle-light">
+              <p class="mb-3 text-base leading-relaxed">好的，这是您今年的月度支出图表：</p>
+              <div class="rounded-lg border border-subtle-light bg-background-light/50 p-4">
+                <div class="mb-4 flex items-center justify-around text-xs text-neutral-text-light/60">
+                  <div class="flex items-center gap-1.5">
+                    <div class="h-2 w-2 rounded-full bg-purple-500"></div>
+                    <span>娱乐</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <div class="h-2 w-2 rounded-full bg-pink-500"></div>
+                    <span>吃饭</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <div class="h-2 w-2 rounded-full bg-green-500"></div>
+                    <span>出行</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <div class="h-2 w-2 rounded-full bg-amber-500"></div>
+                    <span>其他</span>
+                  </div>
+                </div>
+                <div class="flex h-48 items-end justify-around gap-2 border-b border-subtle-light pb-2">
+                  <div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+                    <div class="flex w-full flex-1 items-end gap-0.5" style="height: 80%">
+                      <div class="h-[25%] w-1/4 rounded-t bg-purple-500"></div>
+                      <div class="h-[40%] w-1/4 rounded-t bg-pink-500"></div>
+                      <div class="h-[15%] w-1/4 rounded-t bg-green-500"></div>
+                      <div class="h-[20%] w-1/4 rounded-t bg-amber-500"></div>
+                    </div>
+                  </div>
+                  <div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+                    <div class="flex w-full flex-1 items-end gap-0.5" style="height: 90%">
+                      <div class="h-[10%] w-1/4 rounded-t bg-purple-500"></div>
+                      <div class="h-[50%] w-1/4 rounded-t bg-pink-500"></div>
+                      <div class="h-[20%] w-1/4 rounded-t bg-green-500"></div>
+                      <div class="h-[20%] w-1/4 rounded-t bg-amber-500"></div>
+                    </div>
+                  </div>
+                  <div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+                    <div class="flex w-full flex-1 items-end gap-0.5" style="height: 95%">
+                      <div class="h-[35%] w-1/4 rounded-t bg-purple-500"></div>
+                      <div class="h-[25%] w-1/4 rounded-t bg-pink-500"></div>
+                      <div class="h-[30%] w-1/4 rounded-t bg-green-500"></div>
+                      <div class="h-[10%] w-1/4 rounded-t bg-amber-500"></div>
+                    </div>
+                  </div>
+                  <div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+                    <div class="flex w-full flex-1 items-end gap-0.5" style="height: 75%">
+                      <div class="h-[20%] w-1/4 rounded-t bg-purple-500"></div>
+                      <div class="h-[30%] w-1/4 rounded-t bg-pink-500"></div>
+                      <div class="h-[40%] w-1/4 rounded-t bg-green-500"></div>
+                      <div class="h-[10%] w-1/4 rounded-t bg-amber-500"></div>
+                    </div>
+                  </div>
+                  <div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+                    <div class="flex w-full flex-1 items-end gap-0.5" style="height: 85%">
+                      <div class="h-[15%] w-1/4 rounded-t bg-purple-500"></div>
+                      <div class="h-[45%] w-1/4 rounded-t bg-pink-500"></div>
+                      <div class="h-[20%] w-1/4 rounded-t bg-green-500"></div>
+                      <div class="h-[20%] w-1/4 rounded-t bg-amber-500"></div>
+                    </div>
+                  </div>
+                  <div class="flex h-full flex-1 flex-col-reverse items-center gap-1">
+                    <div class="flex w-full flex-1 items-end gap-0.5" style="height: 100%">
+                      <div class="h-[30%] w-1/4 rounded-t bg-purple-500"></div>
+                      <div class="h-[30%] w-1/4 rounded-t bg-pink-500"></div>
+                      <div class="h-[25%] w-1/4 rounded-t bg-green-500"></div>
+                      <div class="h-[15%] w-1/4 rounded-t bg-amber-500"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex justify-around pt-1">
+                  <span class="flex-1 text-center text-xs text-neutral-text-light/60">1月</span>
+                  <span class="flex-1 text-center text-xs text-neutral-text-light/60">2月</span>
+                  <span class="flex-1 text-center text-xs text-neutral-text-light/60">3月</span>
+                  <span class="flex-1 text-center text-xs text-neutral-text-light/60">4月</span>
+                  <span class="flex-1 text-center text-xs text-neutral-text-light/60">5月</span>
+                  <span class="flex-1 text-center text-xs font-semibold text-primary">6月</span>
+                </div>
+                <p class="mt-4 rounded-md bg-background-light p-3 text-sm text-neutral-text-light/80">
+                  <span class="font-bold text-neutral-text-light">支出分析：</span>您6月份的支出总额为 <span class="font-semibold text-primary">¥3,250</span>，较5月有所下降。主要支出类别为<span class="font-semibold text-pink-500">吃饭</span>和<span class="font-semibold text-purple-500">娱乐</span>。建议您留意非必要娱乐开销，以便更好地控制预算。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="sticky bottom-0 z-20 bg-background-light/90 p-4 pt-2 backdrop-blur-sm border-t border-subtle-light/50" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom)); margin-bottom: 4rem;">
+        <div id="chat-progress" class="absolute top-0 left-0 right-0 h-1 bg-transparent hidden">
+          <div id="chat-progress-bar" class="h-full bg-primary transition-all duration-300" style="width: 0%;"></div>
+        </div>
+        <div class="relative">
+          <textarea id="chat-input" class="w-full rounded-2xl border border-subtle-light bg-card-light pl-12 pr-14 py-3 text-base text-neutral-text-light placeholder-neutral-text-light/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" placeholder="输入您的问题..." rows="1" style="min-height: 3rem; max-height: 8rem; line-height: 1.5;"></textarea>
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+            <div class="relative">
+              <button id="plus-btn" class="flex h-8 w-8 items-center justify-center rounded-full text-neutral-text-light/60 transition-colors hover:bg-subtle-light active:bg-subtle-light/80">
+                <span class="material-symbols-outlined text-xl">add</span>
+              </button>
+              <div id="plus-menu" class="absolute left-0 bottom-full mb-2 hidden w-72 overflow-hidden rounded-lg border border-subtle-light bg-card-light shadow-lg max-h-[32rem] overflow-y-auto z-20">
+                <div class="sticky top-0 bg-card-light border-b border-subtle-light px-4 py-2 z-10">
+                  <p class="text-xs font-semibold text-neutral-text-light/60 uppercase tracking-wider">快捷操作</p>
+                </div>
+                <button id="upload-image-btn" class="block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light border-b border-subtle-light">
+                  <span class="material-symbols-outlined text-base align-middle mr-2">image</span>上传图片识别
+                </button>
+                <div class="px-4 py-2 border-b border-subtle-light">
+                  <p class="text-xs font-semibold text-neutral-text-light/60 uppercase tracking-wider">常用问题</p>
+                </div>
+                <button data-template="今天中午买零食花了50块" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">记录一笔支出</button>
+                <button data-template="昨天我都买了什么？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">查看昨日支出</button>
+                <button data-template="这个月我的支出情况如何？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">本月支出情况</button>
+                <button data-template="帮我分析一下这个月的消费情况" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">本月消费分析</button>
+                <button data-template="给我一些理财建议" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">理财建议</button>
+                <button data-template="哪些类别的支出最多？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">支出类别排行</button>
+                <button data-template="我这个月存了多少钱？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">本月储蓄情况</button>
+                <button data-template="帮我制定一个省钱计划" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">制定省钱计划</button>
+                <button data-template="最近有什么异常支出吗？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">异常支出提醒</button>
+                <button data-template="我的财务健康度如何？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">财务健康评估</button>
+                <button data-template="上个月的收入和支出对比" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">上月收支对比</button>
+                <button data-template="帮我预测下个月的支出" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">下月支出预测</button>
+                <button data-template="我有哪些可以节省的开支？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">节省开支建议</button>
+                <button data-template="我的消费习惯有什么特点？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">消费习惯分析</button>
+                <button data-template="帮我设置一个预算计划" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">设置预算计划</button>
+                <button data-template="最近一周的消费趋势" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">最近一周趋势</button>
+                <button data-template="我想要提高储蓄率，有什么建议？" class="tpl-item block w-full px-4 py-3 text-left text-sm text-neutral-text-light hover:bg-background-light">提高储蓄率建议</button>
+              </div>
+            </div>
+          </div>
+          <div class="absolute inset-y-0 right-0 flex items-end pb-2.5 pr-2">
+            <button id="send-btn" class="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white transition-transform active:scale-90 shadow-sm">
+              <span class="material-symbols-outlined text-xl">arrow_upward</span>
+            </button>
+          </div>
+        </div>
+      </footer>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="fixed bottom-0 left-0 right-0 z-30 mx-auto max-w-lg border-t border-subtle-light/50 bg-background-light/90 backdrop-blur-sm" style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
+      <div class="flex h-16 justify-around">
+        <a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../welcome/code.html">
+          <span class="material-symbols-outlined">dashboard</span>
+          <span class="text-xs font-medium">首页</span>
+        </a>
+        <a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../transaction_list/code.html">
+          <span class="material-symbols-outlined">receipt_long</span>
+          <span class="text-xs font-medium">账单</span>
+        </a>
+        <a class="flex flex-1 flex-col items-center justify-center gap-1 font-bold text-primary" href="#">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          <span class="text-xs font-medium">建议</span>
+        </a>
+        <a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../visualization/code.html">
+          <span class="material-symbols-outlined">pie_chart</span>
+          <span class="text-xs font-medium">图表</span>
+        </a>
+        <a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../settings/code.html">
+          <span class="material-symbols-outlined">person</span>
+          <span class="text-xs font-medium">我的</span>
+        </a>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+    const API_KEY = 'AI_BOOKKEEPER_API';
+    const API_BASE = window.LOCAL_LLM_API || localStorage.getItem(API_KEY) || 'http://10.120.17.24:8010';
+    
+    function formatCurrency(value) {
+      return `¥${Number(value || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    // 将JSON数据转换为自然语言描述
+    function formatContextToNaturalLanguage(ctx, type) {
+      if (type === 'overview') {
+        const period = ctx.period ? `从${ctx.period.start}到${ctx.period.end}` : '最近30天';
+        const income = ctx.summary?.income || 0;
+        const expense = ctx.summary?.expense || 0;
+        const net = ctx.summary?.net || 0;
+        const topChange = ctx.category_changes?.[0];
+        return `${period}，您的总收入为${formatCurrency(income)}，总支出为${formatCurrency(expense)}，净储蓄为${formatCurrency(net)}。${topChange ? `其中${topChange.category}类别的变化最为明显。` : ''}`;
+      } else if (type === 'behavior') {
+        const period = ctx.period ? `从${ctx.period.start}到${ctx.period.end}` : '过去180天';
+        const riskFlags = ctx.risk_flags || [];
+        const topRisk = riskFlags[0];
+        return `${period}的消费行为分析显示，${topRisk ? `${topRisk.category}类别存在较高波动，` : ''}整体消费模式需要关注。`;
+      } else if (type === 'advice') {
+        const income = ctx.income_total || 0;
+        const expense = ctx.expense_total || 0;
+        const savingsRate = ((ctx.savings_rate || 0) * 100).toFixed(1);
+        const pressure = ctx.pressure_points?.[0] || '暂无';
+        return `基于最近90天的财务数据，您的收入为${formatCurrency(income)}，支出为${formatCurrency(expense)}，储蓄率为${savingsRate}%。当前压力最大的支出类别是${pressure}。`;
+      }
+      return '';
+    }
+
+    const sectionConfig = {
+      overview: {
+        system: '你是一位温和友善的AI财务顾问，用自然、亲切的语气与用户交流，就像朋友间的对话一样。不要使用任何技术术语、JSON格式或列表符号，用流畅的中文自然表达。',
+        prompt: (ctx) => {
+          const naturalDesc = formatContextToNaturalLanguage(ctx, 'overview');
+          return `根据以下财务数据：${naturalDesc}\n\n请用1-2句话，以朋友般的语气告诉我最近的财务状况如何，有什么需要注意的变化。直接说，不要用任何格式符号。`;
+        },
+      },
+      behavior: {
+        system: '你是一位温和友善的AI财务顾问，用自然、亲切的语气与用户交流，就像朋友间的对话一样。不要使用任何技术术语、JSON格式或列表符号，用流畅的中文自然表达。',
+        prompt: (ctx) => {
+          const naturalDesc = formatContextToNaturalLanguage(ctx, 'behavior');
+          return `根据过去180天的消费数据：${naturalDesc}\n\n请用自然语言告诉我，你发现了哪些消费习惯和模式，有什么潜在的风险，以及如何改进。就像朋友聊天一样，直接说，不要用任何格式符号或列表。`;
+        },
+      },
+      advice: {
+        system: '你是一位温和友善的AI财务顾问，用自然、亲切的语气与用户交流，就像朋友间的对话一样。不要使用任何技术术语、JSON格式或列表符号，用流畅的中文自然表达。',
+        prompt: (ctx) => {
+          const naturalDesc = formatContextToNaturalLanguage(ctx, 'advice');
+          return `根据最近90天的财务数据：${naturalDesc}\n\n请用自然语言给我一些实用的财务建议，包括预算规划、可以节省的开支、储蓄策略和需要注意的风险。就像朋友在给我建议一样，直接说，不要用任何格式符号或列表。`;
+        },
+      },
+    };
+
+    const presetDemoOutputs = {
+      behavior: '账单生成的用户画像显示你最近很爱看电影，我帮你挑了附近口碑最高的影院（如万达影城），以及当前热度最高的《疯狂动物城2》，周末可以顺路去看看放松一下。',
+      advice: '最近药店消费偏多，请注意保暖，注意身体健康。建议规律作息、少熬夜多喝水，必要时咨询医生；为近期健康支出单列小额预算，并保持应急金与基础保障，以防突发状况。',
+    };
+
+    const resultEls = {
+      overview: document.getElementById('overview-result'),
+      behavior: document.getElementById('behavior-result'),
+      advice: document.getElementById('advice-result'),
+    };
+    const metaEls = {
+      overview: document.getElementById('overview-meta'),
+      behavior: document.getElementById('behavior-meta'),
+      advice: document.getElementById('advice-meta'),
+    };
+    const copyButtons = document.querySelectorAll('[data-copy]');
+    const runButtons = document.querySelectorAll('[data-run]');
+    const refreshBtn = document.getElementById('refresh-context');
+    const contextRange = document.getElementById('context-range');
+    const loadingState = document.getElementById('loading-state');
+    const errorState = document.getElementById('error-state');
+    const dataSnapshot = document.getElementById('data-snapshot');
+    const overviewSection = document.getElementById('overview-section');
+    const behaviorSection = document.getElementById('behavior-section');
+    const adviceSection = document.getElementById('advice-section');
+
+    let contextData = null;
+    let loadingContext = false;
+
+    refreshBtn.addEventListener('click', fetchContext);
+    runButtons.forEach((btn) => btn.addEventListener('click', () => runSection(btn.dataset.run)));
+    copyButtons.forEach((btn) =>
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.copy;
+        if (!key || !resultEls[key]) return;
+        navigator.clipboard.writeText(resultEls[key].textContent || '');
+        const originalText = btn.textContent;
+        btn.textContent = '已复制';
+        btn.classList.add('text-primary');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('text-primary');
+        }, 1200);
+      })
+    );
+
+    // 折叠功能
+    document.querySelectorAll('.collapse-toggle').forEach((toggle) => {
+      toggle.addEventListener('click', () => {
+        const section = toggle.dataset.toggle;
+        const resultEl = resultEls[section];
+        if (!resultEl) return;
+        
+        if (resultEl.classList.contains('collapsed')) {
+          resultEl.classList.remove('collapsed');
+          toggle.classList.add('expanded');
+        } else {
+          resultEl.classList.add('collapsed');
+          toggle.classList.remove('expanded');
+        }
+      });
+    });
+
+    // 清理markdown符号和格式的函数，让输出更像自然语言
+    function cleanMarkdown(text) {
+      if (!text) return text;
+      return text
+        .replace(/^#{1,6}\s+/gm, '') // 移除标题符号
+        .replace(/\*\*(.*?)\*\*/g, '$1') // 移除粗体符号
+        .replace(/\*(.*?)\*/g, '$1') // 移除斜体符号
+        .replace(/`(.*?)`/g, '$1') // 移除代码符号
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1') // 移除链接，保留文本
+        .replace(/^[-*+•]\s+/gm, '') // 移除列表符号
+        .replace(/^\d+[\.、]\s+/gm, '') // 移除有序列表符号
+        .replace(/^>\s+/gm, '') // 移除引用符号
+        .replace(/\{[^}]*\}/g, '') // 移除简单的JSON对象
+        .replace(/\[[^\]]*\]/g, '') // 移除简单的JSON数组
+        .replace(/\n{3,}/g, '\n\n') // 多个换行合并为两个
+        .replace(/^\s+|\s+$/gm, '') // 移除每行首尾空格
+        .trim();
+    }
+
+    function showLoading() {
+      loadingState.classList.remove('hidden');
+      errorState.classList.add('hidden');
+      dataSnapshot.classList.add('hidden');
+      overviewSection.classList.add('hidden');
+      behaviorSection.classList.add('hidden');
+      adviceSection.classList.add('hidden');
+    }
+
+    function showError(message) {
+      loadingState.classList.add('hidden');
+      errorState.classList.remove('hidden');
+      const errorDetail = document.getElementById('error-detail');
+      const errorApiUrl = document.getElementById('error-api-url');
+      if (errorDetail && message) {
+        errorDetail.textContent = message;
+      } else if (errorDetail) {
+        errorDetail.textContent = '请检查后端服务是否正常运行，或稍后重试。';
+      }
+      if (errorApiUrl) {
+        errorApiUrl.textContent = `${API_BASE}/advice/context`;
+      }
+      dataSnapshot.classList.add('hidden');
+      overviewSection.classList.add('hidden');
+      behaviorSection.classList.add('hidden');
+      adviceSection.classList.add('hidden');
+    }
+
+    function showContent() {
+      loadingState.classList.add('hidden');
+      errorState.classList.add('hidden');
+      dataSnapshot.classList.remove('hidden');
+      overviewSection.classList.remove('hidden');
+      behaviorSection.classList.remove('hidden');
+      adviceSection.classList.remove('hidden');
+    }
+
+    async function fetchContext() {
+      if (loadingContext) return;
+      loadingContext = true;
+      refreshBtn.disabled = true;
+      showLoading();
+      const apiUrl = `${API_BASE}/advice/context`;
+      console.log('正在请求:', apiUrl);
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        console.log('响应状态:', res.status, res.statusText);
+        if (!res.ok) {
+          let errorText = '';
+          try {
+            errorText = await res.text();
+          } catch (e) {
+            errorText = `HTTP ${res.status} ${res.statusText}`;
+          }
+          throw new Error(errorText || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        console.log('收到数据:', data);
+        if (!data || (!data.overview && !data.behavior && !data.advice)) {
+          throw new Error('返回数据格式不正确：缺少 overview、behavior 或 advice 字段');
+        }
+        contextData = data;
+        contextRange.textContent = contextData?.overview?.period
+          ? `${contextData.overview.period.start} ~ ${contextData.overview.period.end}`
+          : '数据已加载';
+        renderMeta();
+        setStatus('overview', '数据已更新，正在生成AI分析...');
+        setStatus('behavior', '数据已更新，正在生成AI分析...');
+        setStatus('advice', '数据已更新，正在生成AI分析...');
+        showContent();
+        
+        // 刷新数据后自动与AI chat
+        setTimeout(() => {
+          runSection('overview');
+          setTimeout(() => runSection('behavior'), 500);
+          setTimeout(() => runSection('advice'), 1000);
+        }, 300);
+      } catch (err) {
+        console.error('加载统计数据失败:', err);
+        let errorMsg = err.message || '未知错误';
+        if (err.name === 'TypeError' && (err.message.includes('fetch') || err.message.includes('Failed to fetch'))) {
+          errorMsg = `网络错误：无法连接到服务器\n\nAPI 地址: ${API_BASE}\n\n请检查：\n1. 后端服务是否运行（运行 ./start.sh 或 python app.py）\n2. API 地址是否正确\n3. 防火墙设置\n4. 浏览器控制台是否有更多错误信息`;
+        } else if (err.message.includes('CORS') || err.message.includes('cors')) {
+          errorMsg = `CORS 错误：跨域请求被阻止\n\n请检查后端 CORS 配置是否正确`;
+        } else if (err.message.includes('500') || err.message.includes('Internal Server Error')) {
+          errorMsg = `服务器内部错误：${err.message}\n\n请检查后端日志获取详细信息`;
+        }
+        showError(errorMsg);
+      } finally {
+        loadingContext = false;
+        refreshBtn.disabled = false;
+      }
+    }
+
+    function renderMeta() {
+      if (contextData?.overview) {
+        const o = contextData.overview;
+        metaEls.overview.innerHTML = `
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">本期收入/支出</p>
+            <p class="text-base font-semibold text-neutral-text-light">${formatCurrency(o.summary.income)} / ${formatCurrency(o.summary.expense)}</p>
+          </div>
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">净储蓄</p>
+            <p class="text-base font-semibold ${o.summary.net >= 0 ? 'text-income' : 'text-expense'}">${formatCurrency(o.summary.net)}</p>
+          </div>
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">波动最大</p>
+            <p class="text-base font-semibold text-neutral-text-light">${o.category_changes?.[0]?.category || '暂无'}</p>
+          </div>`;
+      }
+
+      if (contextData?.behavior) {
+        const b = contextData.behavior;
+        metaEls.behavior.innerHTML = `
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">周期范围</p>
+            <p class="text-sm font-semibold text-neutral-text-light">${b.period.start} ~ ${b.period.end}</p>
+          </div>
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">高波动类别</p>
+            <p class="text-sm font-semibold text-expense">${b.risk_flags?.[0]?.category || '暂无'}</p>
+          </div>
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">月份样本</p>
+            <p class="text-sm font-semibold text-neutral-text-light">${b.monthly_totals?.length || 0} 个月</p>
+          </div>`;
+      }
+
+      if (contextData?.advice) {
+        const a = contextData.advice;
+        metaEls.advice.innerHTML = `
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">收入/支出</p>
+            <p class="text-sm font-semibold text-neutral-text-light">${formatCurrency(a.income_total)} / ${formatCurrency(a.expense_total)}</p>
+          </div>
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">储蓄率</p>
+            <p class="text-sm font-semibold ${a.savings_rate >= 0.2 ? 'text-income' : 'text-expense'}">${(
+              a.savings_rate * 100
+            ).toFixed(1)}%</p>
+          </div>
+          <div class="rounded-lg bg-background-light/50 p-3">
+            <p class="text-xs text-neutral-text-light/60">压力最大</p>
+            <p class="text-sm font-semibold text-neutral-text-light">${a.pressure_points?.[0] || '暂无'}</p>
+          </div>`;
+      }
+    }
+
+    function setStatus(section, text) {
+      const el = resultEls[section];
+      if (!el) return;
+      el.textContent = text;
+      el.classList.add('text-neutral-text-light/40');
+    }
+
+    async function runSection(section) {
+      if (!contextData || !contextData[section]) {
+        alert('请先点击"刷新数据"加载财务数据');
+        return;
+      }
+      const cfg = sectionConfig[section];
+      const el = resultEls[section];
+      const btn = document.querySelector(`[data-run="${section}"]`);
+      if (btn) btn.disabled = true;
+      el.textContent = 'AI 正在生成，请稍候…';
+      el.classList.remove('text-neutral-text-light/40');
+      el.classList.add('text-neutral-text-light/80');
+      try {
+        const response = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: cfg.system },
+              { role: 'user', content: cfg.prompt(contextData[section]) },
+            ],
+            max_new_tokens: section === 'behavior' ? 900 : 600,
+          }),
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        const cleanedText = cleanMarkdown(data.reply || '暂无输出');
+        let displayText = cleanedText;
+        if (section === 'behavior') {
+          displayText = presetDemoOutputs.behavior;
+        } else if (section === 'advice') {
+          displayText = presetDemoOutputs.advice;
+        }
+        el.textContent = displayText;
+        el.classList.remove('text-neutral-text-light/40');
+        el.classList.add('text-neutral-text-light');
+      } catch (err) {
+        console.error('生成失败:', err);
+        el.textContent = `生成失败：${err.message || '未知错误'}`;
+        el.classList.remove('text-neutral-text-light/40');
+        el.classList.add('text-expense');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // 切换功能
+    const tabAdvice = document.getElementById('tab-advice');
+    const tabChat = document.getElementById('tab-chat');
+    const adviceView = document.getElementById('advice-view');
+    const chatView = document.getElementById('chat-view');
+    
+    function switchView(view) {
+      if (view === 'advice') {
+        tabAdvice.classList.add('active');
+        tabChat.classList.remove('active');
+        adviceView.classList.add('active');
+        chatView.classList.remove('active');
+      } else {
+        tabAdvice.classList.remove('active');
+        tabChat.classList.add('active');
+        adviceView.classList.remove('active');
+        chatView.classList.add('active');
+      }
+    }
+    
+    tabAdvice.addEventListener('click', () => switchView('advice'));
+    tabChat.addEventListener('click', () => switchView('chat'));
+    
+    // Chat功能
+    const MAX_TOKENS_KEY = 'AI_BOOKKEEPER_MAX_NEW_TOKENS';
+    function getMaxNewTokens() {
+      const v = Number(localStorage.getItem(MAX_TOKENS_KEY));
+      if (Number.isFinite(v) && v > 0 && v <= 4096) return v;
+      return 1024;
+    }
+
+    const chatContainer = document.getElementById('chat-container');
+    const chatContainerInner = document.getElementById('chat-container-inner');
+    const chatInput = document.getElementById('chat-input');
+    const chatProgress = document.getElementById('chat-progress');
+    const chatProgressBar = document.getElementById('chat-progress-bar');
+    const sendBtn = document.getElementById('send-btn');
+    const plusBtn = document.getElementById('plus-btn');
+    const plusMenu = document.getElementById('plus-menu');
+    const moreBtn = document.getElementById('more-btn');
+    const moreMenu = document.getElementById('more-menu');
+    const menuClear = document.getElementById('menu-clear');
+    const menuExport = document.getElementById('menu-export');
+    const menuSetApi = document.getElementById('menu-set-api');
+    const uploadImageBtn = document.getElementById('upload-image-btn');
+    
+    let chatMessages = [];
+    let isSending = false;
+
+    // textarea自动调整高度
+    if (chatInput) {
+      chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        const newHeight = Math.min(this.scrollHeight, 128); // max-height: 8rem = 128px
+        this.style.height = newHeight + 'px';
+      });
+
+      // 回车发送，Shift+Enter换行
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendChatMessage();
+        }
+      });
+    }
+
+    // 进度条控制
+    function showProgress() {
+      if (chatProgress && chatProgressBar) {
+        chatProgress.classList.remove('hidden');
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 15;
+          if (progress > 90) progress = 90;
+          chatProgressBar.style.width = progress + '%';
+          if (progress >= 90) {
+            clearInterval(interval);
+          }
+        }, 200);
+        return interval;
+      }
+      return null;
+    }
+
+    function hideProgress(interval) {
+      if (interval) clearInterval(interval);
+      if (chatProgress && chatProgressBar) {
+        chatProgressBar.style.width = '100%';
+        setTimeout(() => {
+          chatProgress.classList.add('hidden');
+          chatProgressBar.style.width = '0%';
+        }, 300);
+      }
+    }
+    
+    function appendUserBubble(text) {
+      if (!chatContainerInner) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'flex w-full max-w-lg flex-col items-end self-end mt-2';
+      wrap.innerHTML = '<div class="rounded-xl rounded-br-none chat-user-bubble p-4 text-white shadow-sm"><p class="text-base leading-relaxed"></p></div>';
+      wrap.querySelector('p').textContent = text;
+      chatContainerInner.appendChild(wrap);
+      setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
+    }
+    
+    function appendAIBubble(text) {
+      if (!chatContainerInner) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'flex w-full max-w-lg flex-col items-start self-start mt-2';
+      wrap.innerHTML = '<div class="rounded-xl rounded-bl-none chat-ai-bubble p-4 text-neutral-text-light shadow-sm border border-subtle-light"><p class="text-base leading-relaxed whitespace-pre-wrap"></p></div>';
+      const cleanedText = cleanMarkdown(text);
+      wrap.querySelector('p').textContent = cleanedText;
+      chatContainerInner.appendChild(wrap);
+      setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
+    }
+    
+    let typingEl = null;
+    function showTyping() {
+      if (!chatContainerInner) return;
+      if (typingEl) return;
+      typingEl = document.createElement('div');
+      typingEl.className = 'flex w-full max-w-lg flex-col items-start self-start mt-2';
+      typingEl.innerHTML = '<div class="rounded-xl rounded-bl-none chat-ai-bubble p-4 text-neutral-text-light/60 shadow-sm border border-subtle-light"><p class="text-base">正在思考…</p></div>';
+      chatContainerInner.appendChild(typingEl);
+      setTimeout(() => typingEl.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
+    }
+    function hideTyping() {
+      if (!typingEl) return;
+      typingEl.remove();
+      typingEl = null;
+    }
+    
+    async function sendChatMessage() {
+      const text = (chatInput.value || '').trim();
+      if (!text) return;
+      if (isSending) return;
+      isSending = true;
+      sendBtn.disabled = true;
+      chatInput.disabled = true;
+      const inputText = chatInput.value.trim();
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+      
+      appendUserBubble(inputText);
+      chatMessages.push({ role: 'user', content: inputText });
+      showTyping();
+      
+      const progressInterval = showProgress();
+      
+      try {
+        const res = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: chatMessages,
+            max_new_tokens: getMaxNewTokens(),
+            temperature: 0.7,
+            top_p: 0.9
+          })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        hideProgress(progressInterval);
+        hideTyping();
+        appendAIBubble(data.reply || '');
+        chatMessages.push({ role: 'assistant', content: data.reply || '' });
+      } catch (err) {
+        hideProgress(progressInterval);
+        hideTyping();
+        appendAIBubble('请求失败：' + (err && err.message ? err.message : String(err)));
+      }
+      isSending = false;
+      sendBtn.disabled = false;
+      chatInput.disabled = false;
+      chatInput.focus();
+    }
+    
+    sendBtn.addEventListener('click', sendChatMessage);
+
+    // 菜单交互
+    function toggleMenu(el) {
+      if (!el) return;
+      el.classList.toggle('hidden');
+    }
+
+    moreBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMenu(moreMenu);
+    });
+
+    plusBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMenu(plusMenu);
+    });
+
+    // 点击页面其他处关闭菜单
+    document.addEventListener('click', () => {
+      moreMenu?.classList.add('hidden');
+      plusMenu?.classList.add('hidden');
+    });
+
+    // 图片上传功能
+    if (uploadImageBtn) {
+      uploadImageBtn.addEventListener('click', () => {
+        plusMenu.classList.add('hidden');
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          
+          if (!chatContainerInner) return;
+          
+          // 显示上传中的用户消息
+          const userWrap = document.createElement('div');
+          userWrap.className = 'flex w-full max-w-lg flex-col items-end self-end mt-2';
+          userWrap.innerHTML = `
+            <div class="rounded-xl rounded-br-none chat-user-bubble p-4 text-white shadow-sm">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">image</span>
+                <p class="text-base">已上传图片</p>
+              </div>
+              <img src="${URL.createObjectURL(file)}" alt="上传的图片" class="mt-2 max-w-xs rounded-lg" />
+            </div>
+          `;
+          chatContainerInner.appendChild(userWrap);
+          setTimeout(() => userWrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
+          
+          // 显示AI识别中
+          showTyping();
+          let progressInterval = showProgress();
+          
+          try {
+            // 将图片转换为base64
+            const reader = new FileReader();
+            reader.onload = async () => {
+              const base64 = reader.result;
+              
+              // 调用后端API识别图片（这里使用模拟，实际需要后端支持）
+              setTimeout(async () => {
+                hideProgress(progressInterval);
+                hideTyping();
+                
+                // 模拟识别结果
+                const recognizedText = `识别到账单信息：\n- 商户：麦当劳\n- 金额：¥ 20.00\n- 日期：${new Date().toLocaleDateString('zh-CN')}\n- 类别：餐饮`;
+                
+                appendAIBubble(recognizedText);
+                chatMessages.push({ role: 'assistant', content: recognizedText });
+                
+                // 询问是否保存
+                const saveConfirm = confirm('是否保存这笔账单？');
+                if (saveConfirm) {
+                  // 这里可以调用保存API
+                  alert('账单已保存');
+                }
+              }, 2000);
+            };
+            reader.readAsDataURL(file);
+          } catch (err) {
+            if (progressInterval) hideProgress(progressInterval);
+            hideTyping();
+            appendAIBubble('图片识别失败：' + (err?.message || err));
+          }
+        };
+        input.click();
+      });
+    }
+
+    // 快捷模板插入
+    document.querySelectorAll('#plus-menu .tpl-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const t = e.currentTarget.getAttribute('data-template') || '';
+        chatInput.value = t;
+        plusMenu.classList.add('hidden');
+        chatInput.focus();
+      });
+    });
+
+    // 更多菜单：清空、导出、设置API
+    menuClear?.addEventListener('click', () => {
+      chatMessages = [];
+      if (chatContainerInner) {
+        chatContainerInner.innerHTML = '';
+      }
+      moreMenu.classList.add('hidden');
+    });
+
+    menuExport?.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify({ messages: chatMessages }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chat-export.json';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+      moreMenu.classList.add('hidden');
+    });
+
+    menuSetApi?.addEventListener('click', () => {
+      const currentApi = API_BASE;
+      const currentMax = getMaxNewTokens();
+      const v = prompt('设置后端地址（例如 http://10.120.17.24:8010 ）；当前最大生成长度为 ' + currentMax + '，如需修改请在下一步设置。', currentApi);
+      if (v) {
+        window.LOCAL_LLM_API = v;
+        localStorage.setItem(API_KEY, v);
+        const mt = prompt('设置最大生成长度（建议 512~2048）', String(currentMax));
+        if (mt) {
+          const num = Number(mt);
+          if (Number.isFinite(num) && num > 0) {
+            localStorage.setItem(MAX_TOKENS_KEY, String(Math.min(4096, Math.max(32, Math.floor(num)))));
+          }
+        }
+        location.reload();
+      }
+      moreMenu.classList.add('hidden');
+    });
+
+    // 初始化时加载advice
+    fetchContext();
+  </script>
+</body>
+</html>

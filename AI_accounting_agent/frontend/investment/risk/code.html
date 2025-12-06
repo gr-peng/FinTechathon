@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能风险评估</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .radar-spin {
+            width: 72px;
+            height: 72px;
+            border-radius: 9999px;
+            border: 3px solid rgba(37, 99, 235, 0.2);
+            border-top-color: #2563eb;
+            animation: radar 1.2s linear infinite;
+        }
+        @keyframes radar {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .progress-bar {
+            animation: progressFill 5s ease forwards;
+        }
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+        .fade-in {
+            animation: fade 0.7s ease forwards;
+        }
+        @keyframes fade {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen font-['Noto Sans SC']">
+    <div class="min-h-screen flex items-center justify-center px-4 py-10 pb-28">
+        <div class="w-full max-w-md space-y-6">
+            <div class="rounded-3xl bg-gradient-to-r from-slate-900 via-blue-900/90 to-slate-800 text-white p-6 shadow-xl">
+                <p class="text-sm uppercase tracking-[0.3em] text-blue-200">AI Risk Insight</p>
+                <h1 class="text-3xl font-bold mt-2">智能风险评估</h1>
+                <p class="mt-3 text-slate-200 text-sm sm:text-base leading-relaxed">
+                    系统正在调取账户行为、资产负债与画像标签，自动生成面向客户的个性化风险等级分析。
+                </p>
+            </div>
+
+            <div id="analysis-stage" class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 sm:p-8 space-y-6">
+                <div class="flex items-center space-x-5">
+                    <div class="radar-spin"></div>
+                    <div>
+                        <p class="text-lg font-semibold text-gray-900">正在进行智能风险评估</p>
+                        <p class="text-sm text-gray-500 mt-1">系统自动分析用户风险等级，预计 5 秒钟完成</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <span class="material-symbols-outlined text-blue-600 text-2xl">swap_vert</span>
+                        <div>
+                            <p class="font-medium text-gray-900">评测指标：账户流水</p>
+                            <p class="text-xs text-gray-500">检测现金流入流出、月度结余与回撤幅度</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <span class="material-symbols-outlined text-amber-500 text-2xl">badge</span>
+                        <div>
+                            <p class="font-medium text-gray-900">评测指标：用户画像</p>
+                            <p class="text-xs text-gray-500">综合风险偏好、投资经验、家庭结构标签</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <span class="material-symbols-outlined text-emerald-600 text-2xl">savings</span>
+                        <div>
+                            <p class="font-medium text-gray-900">评测指标：财产状况</p>
+                            <p class="text-xs text-gray-500">核验资产规模、负债率与应急资金覆盖倍数</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                        <span>分析进度</span>
+                        <span id="progress-text">0%</span>
+                    </div>
+                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div id="analysis-progress" class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="report-stage" class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 sm:p-8 space-y-5 hidden">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-50 text-blue-600 rounded-2xl p-4">
+                        <span class="material-symbols-outlined text-4xl">verified_user</span>
+                    </div>
+                    <div>
+                        <p class="text-sm uppercase text-gray-500 tracking-widest">风险等级</p>
+                        <p class="text-2xl font-bold text-gray-900">平衡型（中等风险承受力）</p>
+                    </div>
+                </div>
+                <div class="text-sm sm:text-base leading-relaxed text-gray-700 space-y-4">
+                    <p>您整体财务状况较为稳健,账户流水稳定,月度结余5000元左右,储蓄能力较强,短期内有承受投资亏损的能力。</p>
+                    <p>用户画像具有一定投资基础和风险认知，对中等波动产品能保持理性。</p>
+                    <p>综合资产规模与负债情况，资产结构相对健康，具备承担阶段性回撤的能力。</p>
+                </div>
+                <div class="pt-4 border-t border-gray-100">
+                    <p class="text-sm font-semibold text-gray-900">适合的投资类型</p>
+                    <p class="text-sm text-gray-600 mt-2">混合基金、指数基金、分散股票 + 固收组合。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/60 bg-white/95 backdrop-blur-md">
+        <div class="mx-auto flex max-w-md items-stretch justify-between px-2">
+            <a href="../welcome/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">home</span>
+                <span class="text-[11px] font-semibold">开始</span>
+            </a>
+            <a href="../risk/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-indigo-600">
+                <span class="material-symbols-outlined text-xl">shield_person</span>
+                <span class="text-[11px] font-semibold">风险评估</span>
+            </a>
+            <a href="../report/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">analytics</span>
+                <span class="text-[11px] font-semibold">智能投资</span>
+            </a>
+            <a href="../trader_chat/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">forum</span>
+                <span class="text-[11px] font-semibold">金融问答</span>
+            </a>
+            <a href="../visual/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">dashboard</span>
+                <span class="text-[11px] font-semibold">仪表盘</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        const ANALYSIS_MS = 5000;
+        const progressEl = document.getElementById('analysis-progress');
+        const progressText = document.getElementById('progress-text');
+        const analysisStage = document.getElementById('analysis-stage');
+        const reportStage = document.getElementById('report-stage');
+
+        function animateProgress() {
+            let start = null;
+            function step(timestamp) {
+                if (!start) start = timestamp;
+                const elapsed = timestamp - start;
+                const pct = Math.min(100, Math.round((elapsed / ANALYSIS_MS) * 100));
+                if (progressText) progressText.textContent = `${pct}%`;
+                if (elapsed < ANALYSIS_MS) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    progressText.textContent = '100%';
+                }
+            }
+            window.requestAnimationFrame(step);
+        }
+
+        function showReport() {
+            analysisStage.classList.add('hidden');
+            reportStage.classList.remove('hidden');
+            reportStage.classList.add('fade-in');
+        }
+
+        animateProgress();
+        setTimeout(showReport, ANALYSIS_MS);
+    </script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>投资组合概览</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen pb-28">
+    <div class="max-w-md mx-auto p-4 sm:p-6">
+        <header class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">投资组合概览</h1>
+                <p class="text-sm text-gray-500">实时监控与分析</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-gray-500">最后更新</p>
+                <p class="font-mono font-bold" id="last-update">--</p>
+            </div>
+        </header>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-sm text-gray-500 mb-1">总资产 (CNY)</p>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900" id="total-balance">--</h2>
+                <div class="flex items-center mt-2 text-gray-600" id="day-change-container">
+                    <span class="material-symbols-outlined text-base mr-1" id="day-change-icon">trending_flat</span>
+                    <span class="font-semibold text-sm" id="day-change-pct">--%</span>
+                    <span class="text-xs text-gray-400 ml-2">今日变动</span>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">收益曲线</p>
+                        <div class="flex items-baseline space-x-2">
+                            <h2 class="text-2xl sm:text-3xl font-bold" id="return-curve-label">月度表现</h2>
+
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button type="button" class="px-3 py-1 text-xs font-semibold rounded-full border bg-gray-900 text-white border-gray-900 shadow" data-curve="month">月</button>
+                        <button type="button" class="px-3 py-1 text-xs font-semibold rounded-full border bg-white text-gray-500 border-gray-200" data-curve="quarter">季</button>
+                        <button type="button" class="px-3 py-1 text-xs font-semibold rounded-full border bg-white text-gray-500 border-gray-200" data-curve="year">年</button>
+                    </div>
+                </div>
+                <div class="mt-3 rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+                    <img id="return-curve-img" src="./FinAgent_vs_SSE100_Month_11.png" alt="收益曲线" class="w-full h-40 object-cover" />
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-sm text-gray-500 mb-1">最大持仓</p>
+                <h2 class="text-lg sm:text-xl font-bold truncate" id="top-holding-name">--</h2>
+                <p class="text-sm text-gray-500 mt-1" id="top-holding-val">--</p>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-800 mb-4">板块配置</h3>
+                <canvas id="sectorChart" style="max-height: 220px;"></canvas>
+            </div>
+        </div>
+
+        <!-- Holdings List -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h3 class="font-bold text-gray-800">持仓明细</h3>
+            </div>
+            <div id="holdings-body" class="divide-y divide-gray-100">
+                <!-- Mobile-friendly list injected here -->
+            </div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-200 bg-white/95 backdrop-blur-md">
+        <div class="mx-auto flex max-w-md items-stretch justify-between px-2">
+            <a href="../welcome/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">home</span>
+                <span class="text-[11px] font-semibold">开始</span>
+            </a>
+            <a href="../risk/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">shield_person</span>
+                <span class="text-[11px] font-semibold">风险评估</span>
+            </a>
+            <a href="../report/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">analytics</span>
+                <span class="text-[11px] font-semibold">智能投资</span>
+            </a>
+            <a href="../trader_chat/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">forum</span>
+                <span class="text-[11px] font-semibold">金融问答</span>
+            </a>
+            <a href="../visual/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-indigo-600">
+                <span class="material-symbols-outlined text-xl">dashboard</span>
+                <span class="text-[11px] font-semibold">仪表盘</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        const API_BASE = window.localStorage.getItem('AI_TRADER_API') || 'http://localhost:8020';
+        const COLOR_PALETTE = ['#2563EB', '#10B981', '#F97316', '#8B5CF6', '#EC4899'];
+        const SIM_WEIGHT_TEMPLATE = [0.28, 0.22, 0.18, 0.17, 0.15];
+        const SIM_PNL_TEMPLATE = [4.6, -2.1, 1.2, 3.8, -0.6];
+        const SIM_CONCEPT_TEMPLATE = ['银行龙头', '白酒消费', '能源资源', '高端制造', '保险金融'];
+        const SIM_PRICE_POINT_COUNT = 14;
+        const RETURN_CURVE_IMAGES = {
+            month: 'FinAgent_vs_SSE100_Month_11.png',
+            quarter: 'FinAgent_vs_SSE100_Quarter.png',
+            year: 'FinAgent_vs_SSE100_Year.png',
+        };
+        const RETURN_CURVE_LABELS = {
+            month: '月度表现',
+            quarter: '季度表现',
+            year: '年度表现',
+        };
+        const RETURN_CURVE_DEFAULT = 'month';
+
+        let watchlistMap = {};
+        let topWatchlist = [];
+        let simulatedHoldings = [];
+        let sectorChartInstance = null;
+        let watchlistChartInstance = null;
+        let currentCurveType = RETURN_CURVE_DEFAULT;
+
+        async function init() {
+            try {
+                const [watchlistData, portfolioData] = await Promise.all([
+                    fetchJson(`${API_BASE}/trader/watchlist`),
+                    fetchJson(`${API_BASE}/trader/portfolio`)
+                ]);
+
+                watchlistMap = watchlistData.reduce((acc, item) => {
+                    acc[item.code] = item.name;
+                    return acc;
+                }, {});
+                topWatchlist = watchlistData.slice(0, 5);
+
+                const totalBalance = Number(portfolioData.summary?.total_balance || 0);
+                simulatedHoldings = buildSimulatedHoldings(topWatchlist, totalBalance || 1);
+
+                renderPortfolio(portfolioData);
+                renderWatchlistChart();
+            } catch (e) {
+                console.error(e);
+                document.getElementById('holdings-body').innerHTML = '<div class="p-6 text-center text-red-500">数据加载失败</div>';
+                toggleWatchlistChart(false);
+            }
+        }
+
+        async function fetchJson(url) {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`请求失败: ${url}`);
+            return res.json();
+        }
+
+        function buildSimulatedHoldings(stocks, totalBalance) {
+            if (!stocks.length) return [];
+            return stocks.map((stock, idx) => {
+                const weight = SIM_WEIGHT_TEMPLATE[idx] || 0.1;
+                const marketValue = totalBalance * weight;
+                const priceBase = 60 + idx * 28;
+                return {
+                    code: stock.code,
+                    name: stock.name,
+                    weight,
+                    market_value: marketValue,
+                    current_price: priceBase,
+                    pnl_pct: SIM_PNL_TEMPLATE[idx] || 0,
+                    concept: SIM_CONCEPT_TEMPLATE[idx] || '自选股',
+                };
+            });
+        }
+
+        function renderPortfolio(data) {
+            const summary = data.summary || {};
+            const lastUpdate = summary.last_update || Date.now();
+            document.getElementById('last-update').textContent = new Date(lastUpdate).toLocaleString('zh-CN', { hour12: false });
+
+            document.getElementById('total-balance').textContent = Number(summary.total_balance || 0).toLocaleString('zh-CN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+            const dayChangePct = Number(summary.day_change_pct || 0);
+            const dayChangeContainer = document.getElementById('day-change-container');
+            const dayChangeIcon = document.getElementById('day-change-icon');
+            const dayChangePctEl = document.getElementById('day-change-pct');
+
+            dayChangePctEl.textContent = `${dayChangePct.toFixed(2)}%`;
+            dayChangeContainer.classList.remove('text-green-600', 'text-red-600', 'text-gray-600');
+            if (dayChangePct > 0) {
+                dayChangeContainer.classList.add('text-green-600');
+                dayChangeIcon.textContent = 'trending_up';
+            } else if (dayChangePct < 0) {
+                dayChangeContainer.classList.add('text-red-600');
+                dayChangeIcon.textContent = 'trending_down';
+            } else {
+                dayChangeContainer.classList.add('text-gray-600');
+                dayChangeIcon.textContent = 'trending_flat';
+            }
+
+            const ytdReturn = Number(summary.ytd_return_pct || 0);
+            updateReturnCurveMetric(ytdReturn);
+
+            const simulatedTop = simulatedHoldings[0];
+            if (simulatedTop) {
+                document.getElementById('top-holding-name').textContent = simulatedTop.name;
+                document.getElementById('top-holding-val').textContent = `市值: ${Number(simulatedTop.market_value || 0).toLocaleString('zh-CN')}`;
+            } else {
+                document.getElementById('top-holding-name').textContent = '--';
+                document.getElementById('top-holding-val').textContent = '--';
+            }
+
+            renderHoldingsList();
+            renderSectorChart();
+        }
+
+        function renderHoldingsList() {
+            const holdingsBody = document.getElementById('holdings-body');
+            holdingsBody.innerHTML = '';
+            simulatedHoldings.forEach((h) => {
+                const pnlClass = h.pnl_pct > 0 ? 'text-green-600' : h.pnl_pct < 0 ? 'text-red-600' : 'text-gray-500';
+                const item = document.createElement('div');
+                item.className = 'p-4 grid grid-cols-3 gap-2 items-center';
+                const currentPrice = Number(h.current_price || 0).toFixed(2);
+                const marketValue = Number(h.market_value || 0).toLocaleString('zh-CN');
+                const weightPct = (Number(h.weight || 0) * 100).toFixed(1);
+                item.innerHTML = `
+                    <div class="col-span-2">
+                        <p class="font-bold truncate">${h.name}</p>
+                        <p class="text-xs text-gray-400">${h.code}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-mono font-semibold ${pnlClass}">${Number(h.pnl_pct || 0).toFixed(2)}%</p>
+                        <p class="text-xs text-gray-400">${weightPct}%</p>
+                    </div>
+                    <div class="col-span-3 mt-2 flex justify-between text-xs text-gray-500">
+                        <span>现价: <span class="font-mono">${currentPrice}</span></span>
+                        <span>市值: <span class="font-mono">${marketValue}</span></span>
+                        <span>主题: <span class="font-medium text-indigo-500">${h.concept || '--'}</span></span>
+                    </div>
+                `;
+                holdingsBody.appendChild(item);
+            });
+        }
+
+        function renderSectorChart() {
+            if (!simulatedHoldings.length) {
+                if (sectorChartInstance) {
+                    sectorChartInstance.destroy();
+                    sectorChartInstance = null;
+                }
+                return;
+            }
+            const ctx = document.getElementById('sectorChart').getContext('2d');
+            const labels = simulatedHoldings.map((h) => h.name);
+            const values = simulatedHoldings.map((h) => (h.weight || 0) * 100);
+
+            if (sectorChartInstance) sectorChartInstance.destroy();
+            sectorChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: COLOR_PALETTE,
+                        borderWidth: 0,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15,
+                                font: { size: 12 },
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        function setupReturnCurveControls() {
+            const buttons = document.querySelectorAll('[data-curve]');
+            if (!buttons.length) return;
+            buttons.forEach((btn) => {
+                btn.addEventListener('click', () => setReturnCurve(btn.dataset.curve));
+            });
+            setReturnCurve(currentCurveType);
+        }
+
+        function setReturnCurve(type) {
+            if (!RETURN_CURVE_IMAGES[type]) return;
+            currentCurveType = type;
+            const labelEl = document.getElementById('return-curve-label');
+            if (labelEl) labelEl.textContent = RETURN_CURVE_LABELS[type] || '收益曲线';
+            const imgEl = document.getElementById('return-curve-img');
+            if (imgEl) {
+                imgEl.src = `./${RETURN_CURVE_IMAGES[type]}`;
+                imgEl.alt = `收益曲线 - ${RETURN_CURVE_LABELS[type] || ''}`;
+            }
+            document.querySelectorAll('[data-curve]').forEach((btn) => {
+                if (btn.dataset.curve === type) {
+                    btn.classList.add('bg-gray-900', 'text-white', 'border-gray-900', 'shadow');
+                    btn.classList.remove('bg-white', 'text-gray-500', 'border-gray-200');
+                } else {
+                    btn.classList.remove('bg-gray-900', 'text-white', 'border-gray-900', 'shadow');
+                    btn.classList.add('bg-white', 'text-gray-500', 'border-gray-200');
+                }
+            });
+        }
+
+        function updateReturnCurveMetric(value) {
+            const el = document.getElementById('return-curve-ytd');
+            if (!el) return;
+            const safeValue = Number.isFinite(value) ? value : 0;
+            el.textContent = `YTD ${safeValue.toFixed(2)}%`;
+        }
+
+        function buildSimulatedPriceSeries() {
+            const labels = generateRecentLabels(SIM_PRICE_POINT_COUNT);
+            const datasets = simulatedHoldings.map((holding, idx) => {
+                const scatterSeries = generateRandomScatterSeries(Number(holding.current_price || 0), labels.length);
+                return {
+                    label: `${holding.name} (${holding.code})`,
+                    data: scatterSeries,
+                    borderColor: COLOR_PALETTE[idx % COLOR_PALETTE.length],
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.8,
+                    pointRadius: 3,
+                    pointHoverRadius: 4,
+                    tension: 0.35,
+                };
+            });
+            return { labels, datasets };
+        }
+
+        function generateRandomScatterSeries(basePrice, length) {
+            const safeBase = basePrice > 0 ? basePrice : 50;
+            let current = safeBase * (0.95 + Math.random() * 0.1);
+            const series = [];
+            for (let i = 0; i < length; i++) {
+                const drift = (Math.random() - 0.45) * (0.05 + Math.random() * 0.04); // -4%~+4% swings
+                current = Math.max(1, current * (1 + drift));
+                const noise = (Math.random() - 0.5) * 0.02;
+                const pointValue = Number((current * (1 + noise)).toFixed(2));
+                series.push(pointValue);
+            }
+            return series;
+        }
+
+        function generateRecentLabels(days) {
+            const today = new Date();
+            const labels = [];
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                labels.push(`${d.getMonth() + 1}/${String(d.getDate()).padStart(2, '0')}`);
+            }
+            return labels;
+        }
+
+        function toggleWatchlistChart(hasData) {
+            const empty = document.getElementById('watchlist-chart-empty');
+            const canvas = document.getElementById('watchlistChart');
+            if (!empty || !canvas) return;
+            if (hasData) {
+                empty.classList.add('hidden');
+                canvas.classList.remove('hidden');
+            } else {
+                empty.classList.remove('hidden');
+                canvas.classList.add('hidden');
+            }
+        }
+
+        function renderWatchlistChart() {
+            const canvas = document.getElementById('watchlistChart');
+            if (!canvas) return;
+            if (!simulatedHoldings.length) {
+                toggleWatchlistChart(false);
+                return;
+            }
+
+            const ctx = canvas.getContext('2d');
+            const { labels, datasets } = buildSimulatedPriceSeries();
+            toggleWatchlistChart(true);
+
+            if (watchlistChartInstance) watchlistChartInstance.destroy();
+            watchlistChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { color: '#F3F4F6' } },
+                    },
+                },
+            });
+        }
+
+        setupReturnCurveControls();
+        init();
+    </script>
+</body>
+</html>

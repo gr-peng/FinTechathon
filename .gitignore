@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large files and models
+*.npy
+*.index
+*.pkl
+*.tar
+*.bin
+*.safetensors
+*.pt
+*.pth
+optimizer.pt
+scheduler.pt
+rng_state*.pth
+
+# Training checkpoints (large files)
+**/checkpoint-*/optimizer.pt
+**/checkpoint-*/scheduler.pt
+**/checkpoint-*/rng_state*.pth
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+Qwen*/
+LLM_Models/
+**/*.safetensors
+**/model/
+**/checkpoint/

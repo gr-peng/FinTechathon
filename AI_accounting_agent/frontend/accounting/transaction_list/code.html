@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>交易记录</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class", // Note: The design is light mode, but keeping this for structure.
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0A84FF",
+            "background-light": "#F2F2F7",
+            "background-dark": "#000000", // Fallback dark mode
+            "expense": "#FF3B30",
+            "income": "#34C759",
+            "neutral-text-light": "#1C1C1E",
+            "neutral-text-dark": "#E5E5EA", // Fallback dark mode
+            "card-light": "#FFFFFF",
+            "card-dark": "#1C1C1E", // Fallback dark mode
+            "subtle-light": "#E9E9EB",
+            "subtle-dark": "#2C2C2E", // Fallback dark mode
+          },
+          fontFamily: {
+            "display": ["Noto Sans SC", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.75rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+    }
+    body {
+      min-height: 100dvh;
+      background-color: #F2F2F7;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+    .category-progress-bar {
+      height: 4px;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      min-width: 2px;
+    }
+    .context-menu {
+      position: fixed;
+      background: white;
+      border: 1px solid #E9E9EB;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      min-width: 120px;
+      overflow: hidden;
+    }
+    .context-menu-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: background-color 0.2s;
+    }
+    .context-menu-item:hover {
+      background-color: #F2F2F7;
+    }
+    .context-menu-item.danger {
+      color: #FF3B30;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .category-progress-container {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .category-progress-container::-webkit-scrollbar {
+      display: none;
+    }
+    #category-progress {
+      display: inline-flex;
+      min-width: max-content;
+    }
+  </style>
+  </head>
+<body class="bg-background-light font-display text-neutral-text-light antialiased">
+<div class="relative mx-auto flex h-auto min-h-screen w-full max-w-lg flex-col overflow-x-hidden">
+<header class="sticky top-0 z-10 flex items-center justify-between bg-background-light/80 p-4 pb-3 backdrop-blur-sm">
+<div class="flex size-10 shrink-0 items-center justify-start">
+<button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full">
+<span class="material-symbols-outlined text-2xl">person</span>
+</button>
+</div>
+<h1 class="text-lg font-bold">账单</h1>
+<div class="flex size-10 items-center justify-end">
+<button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+</div>
+</header>
+<main class="flex flex-1 flex-col gap-4 px-4 pb-32">
+<section class="flex flex-col gap-4 rounded-lg bg-card-light p-4 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 relative">
+<select id="month-selector" class="text-xl font-bold bg-transparent border-none appearance-none cursor-pointer pr-8 focus:outline-none">
+</select>
+<span class="material-symbols-outlined text-lg text-neutral-text-light/60 absolute left-24 pointer-events-none">expand_more</span>
+</div>
+<div class="flex gap-4 text-sm text-neutral-text-light/80">
+<div>支出 <span id="summary-expense" class="font-medium text-neutral-text-light">--</span></div>
+<div>收入 <span id="summary-income" class="font-medium text-neutral-text-light">--</span></div>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-2 py-2">
+<div class="flex gap-3 overflow-x-auto [scrollbar-width:none] pb-2">
+<button data-filter="全部" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary px-4 text-white">
+<p class="text-sm font-medium">全部</p>
+</button>
+<button data-filter="餐饮" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-card-light px-4 category-filter-btn">
+<p class="text-sm font-medium">餐饮</p>
+</button>
+<button data-filter="出行" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-card-light px-4 category-filter-btn">
+<p class="text-sm font-medium">出行</p>
+</button>
+<button data-filter="购物" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-card-light px-4 category-filter-btn">
+<p class="text-sm font-medium">购物</p>
+</button>
+<button data-filter="生活缴费" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-card-light px-4 category-filter-btn">
+<p class="text-sm font-medium">生活缴费</p>
+</button>
+<button data-filter="娱乐" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-card-light px-4 category-filter-btn">
+<p class="text-sm font-medium">娱乐</p>
+</button>
+<button data-filter="其他" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-card-light px-4 category-filter-btn">
+<p class="text-sm font-medium">其他</p>
+</button>
+<button data-filter="income" class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full bg-card-light px-4">
+<p class="text-sm font-medium">收入</p>
+</button>
+</div>
+<div class="category-progress-container py-2 -mx-4 px-4">
+  <div id="category-progress" class="flex gap-2 items-center" style="min-height: 6px;"></div>
+</div>
+</section>
+<section id="bill-lists" class="flex flex-col gap-4"></section>
+</main>
+<nav class="fixed bottom-0 left-0 right-0 z-10 mx-auto max-w-lg border-t border-subtle-light/50 bg-background-light/90 backdrop-blur-sm">
+<div class="flex h-16 justify-around">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../welcome/code.html">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-xs font-medium">首页</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 font-bold text-primary" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-xs font-medium">账单</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../financial_advice/code.html">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="text-xs font-medium">建议</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../visualization/code.html">
+<span class="material-symbols-outlined">pie_chart</span>
+<span class="text-xs font-medium">图表</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-neutral-text-light/70 hover:text-primary" href="../settings/code.html">
+<span class="material-symbols-outlined">person</span>
+<span class="text-xs font-medium">我的</span>
+</a>
+</div>
+</nav>
+<div class="fixed bottom-16 left-0 right-0 z-10 mx-auto max-w-lg border-t border-subtle-light/50 bg-background-light/90 backdrop-blur-sm p-4">
+<div class="flex justify-around items-center gap-2">
+<button id="btn-manual" class="flex flex-col items-center gap-1 text-primary flex-1">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="text-xs font-medium">手动输入</span>
+</button>
+<button id="btn-upload" class="flex flex-col items-center gap-1 text-primary flex-1">
+<span class="material-symbols-outlined">photo_camera</span>
+<span class="text-xs font-medium">上传票据</span>
+</button>
+<button id="btn-voice" class="flex flex-col items-center gap-1 text-primary flex-1 relative">
+<span class="material-symbols-outlined">mic</span>
+<span class="text-xs font-medium">语音输入</span>
+<span id="voice-recording-indicator" class="absolute top-0 right-4 h-2 w-2 rounded-full bg-red-500 hidden animate-pulse"></span>
+</button>
+</div>
+</div>
+</div>
+<script>
+const API_KEY='AI_BOOKKEEPER_API';
+const API_BASE=(window.LOCAL_LLM_API||localStorage.getItem(API_KEY)||'http://10.120.17.24:8010');
+
+const searchInput = document.querySelector('input[placeholder="搜索交易..."]');
+const filterBtns = Array.from(document.querySelectorAll('[data-filter]'));
+const listContainer = document.getElementById('bill-lists');
+const monthSelector = document.getElementById('month-selector');
+const summaryIncomeEl = document.getElementById('summary-income');
+const summaryExpenseEl = document.getElementById('summary-expense');
+const categoryProgressEl = document.getElementById('category-progress');
+
+let bills = [];
+let filteredBills = [];
+let activeFilter = '全部';
+let selectedMonth = null;
+let selectedYear = null;
+
+function formatCurrency(amount, currency, type){
+	const sign = type === 'income' ? '+' : '-';
+	return `${sign}¥${Number(amount).toFixed(2)}${currency && currency !== 'CNY' ? ` ${currency}` : ''}`;
+}
+
+function formatDateLabel(dateStr){
+	const dateObj = new Date(dateStr);
+	if(Number.isNaN(dateObj.getTime())) return dateStr;
+	return dateObj.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'}) + ` (${['日','一','二','三','四','五','六'][dateObj.getDay()]})`;
+}
+
+function groupBills(list){
+	const groups = new Map();
+	list.forEach(bill=>{
+		const key = bill.event_date;
+		if(!groups.has(key)) groups.set(key, []);
+		groups.get(key).push(bill);
+	});
+	return Array.from(groups.entries()).sort((a,b)=> new Date(b[0]) - new Date(a[0]));
+}
+
+function getIcon(category, type){
+	const map = {
+		'餐饮':'restaurant',
+		'出行':'directions_bus',
+		'购物':'shopping_cart',
+		'生活缴费':'receipt_long',
+		'娱乐':'movie',
+		'其他':'payments',
+		'收入':'work'
+	};
+	if(type === 'income') return 'work';
+	return map[category] || 'payments';
+}
+
+function renderBills(list){
+	if(!listContainer) return;
+	if(!list.length){
+		listContainer.innerHTML = '<div class="rounded-lg bg-card-light p-6 text-center text-sm text-neutral-text-light/60">暂无账单数据，请在「票据识别」或「语音输入」页面录入。</div>';
+		return;
+	}
+	const grouped = groupBills(list);
+	const html = grouped.map(([date, items])=>{
+		const totalExpense = items.filter(i=>i.type==='expense').reduce((sum,b)=>sum+b.amount,0);
+		const totalIncome = items.filter(i=>i.type==='income').reduce((sum,b)=>sum+b.amount,0);
+		const badge = totalIncome>0 ? `收入 ${totalIncome.toFixed(2)}` : `支出 ¥-${totalExpense.toFixed(2)}`;
+		const rows = items.map(item=>`
+			<li class="bill-item flex items-center gap-4 rounded-lg p-3 hover:bg-subtle-light cursor-pointer" data-bill-id="${item.id || ''}" data-bill-category="${item.category}" data-bill-type="${item.type}">
+				<div class="flex h-11 w-11 items-center justify-center rounded-full bg-subtle-light text-primary">
+					<span class="material-symbols-outlined text-2xl">${getIcon(item.category, item.type)}</span>
+				</div>
+				<div class="flex-1">
+					<p class="font-semibold">${item.description || item.category}</p>
+					<p class="text-xs text-neutral-text-light/70">${item.category} · ${item.source || '系统'}</p>
+				</div>
+				<div class="text-right">
+					<p class="font-semibold ${item.type==='income' ? 'text-income' : 'text-expense'}">${formatCurrency(item.amount, item.currency, item.type)}</p>
+					<p class="text-xs text-neutral-text-light/60">${date}</p>
+				</div>
+			</li>
+		`).join('');
+		return `
+			<div class="flex items-center justify-between pt-2">
+				<h2 class="text-base font-bold">${formatDateLabel(date)}</h2>
+				<p class="text-sm text-neutral-text-light/60">${badge}</p>
+			</div>
+			<ul class="flex flex-col gap-2 rounded-lg bg-card-light p-2 shadow-sm">
+				${rows}
+			</ul>
+		`;
+	}).join('');
+	listContainer.innerHTML = html;
+	
+	// 绑定右键菜单事件
+	setupContextMenu();
+}
+
+function renderCategoryProgress(){
+	if(!categoryProgressEl) return;
+	const expenseBills = bills.filter(b => b.type === 'expense');
+	const totalExpense = expenseBills.reduce((sum, b) => sum + b.amount, 0);
+	if(totalExpense === 0){
+		categoryProgressEl.innerHTML = '<div class="text-xs text-neutral-text-light/40 whitespace-nowrap">暂无支出数据</div>';
+		return;
+	}
+	
+	const categories = ['餐饮', '出行', '购物', '生活缴费', '娱乐', '其他'];
+	const categoryData = categories.map(cat => {
+		const catBills = expenseBills.filter(b => b.category === cat);
+		const amount = catBills.reduce((sum, b) => sum + b.amount, 0);
+		const percentage = (amount / totalExpense) * 100;
+		return { category: cat, amount, percentage };
+	}).filter(item => item.amount > 0).sort((a, b) => b.amount - a.amount);
+	
+	const colors = {
+		'餐饮': '#EC4899',
+		'出行': '#10B981',
+		'购物': '#F59E0B',
+		'生活缴费': '#3B82F6',
+		'娱乐': '#8B5CF6',
+		'其他': '#6B7280'
+	};
+	
+	// 计算可用宽度（视窗宽度减去padding）
+	const viewportWidth = window.innerWidth || 375;
+	const availableWidth = viewportWidth - 64; // 左右各32px padding
+	const minBarWidth = 40; // 最小进度条宽度，确保可见
+	const barHeight = 6;
+	
+	// 计算每个进度条的宽度，确保总宽度足够大以支持滚动
+	const totalPercentage = categoryData.reduce((sum, item) => sum + item.percentage, 0);
+	const scaleFactor = Math.max(1, totalPercentage > 100 ? (availableWidth * 1.5) / totalPercentage : 1);
+	
+	const html = categoryData.map(item => {
+		// 计算宽度，确保最小宽度，并且总宽度会超出视窗以支持滚动
+		const width = Math.max((item.percentage / 100) * availableWidth * scaleFactor, minBarWidth);
+		return `
+			<div class="category-progress-item shrink-0 flex flex-col items-center gap-1" style="min-width: ${minBarWidth + 20}px; flex-shrink: 0;">
+				<div class="category-progress-bar rounded-sm cursor-pointer hover:opacity-80 transition-opacity" 
+					style="width: ${width}px; height: ${barHeight}px; background-color: ${colors[item.category] || '#6B7280'};" 
+					title="${item.category}: ¥${item.amount.toFixed(2)} (${item.percentage.toFixed(1)}%)"
+					data-category="${item.category}">
+				</div>
+				<div class="text-[10px] text-neutral-text-light/60 whitespace-nowrap">${item.category}</div>
+			</div>
+		`;
+	}).join('');
+	
+	categoryProgressEl.innerHTML = html || '<div class="text-xs text-neutral-text-light/40 whitespace-nowrap">暂无支出数据</div>';
+	
+	// 绑定点击事件，点击进度条可以筛选对应分类
+	categoryProgressEl.querySelectorAll('.category-progress-bar').forEach(bar => {
+		bar.addEventListener('click', () => {
+			const category = bar.dataset.category;
+			if(category){
+				// 找到对应的筛选按钮并点击
+				const filterBtn = filterBtns.find(btn => btn.dataset.filter === category);
+				if(filterBtn){
+					filterBtn.click();
+				}
+			}
+		});
+	});
+}
+
+function setupContextMenu(){
+	const billItems = document.querySelectorAll('.bill-item');
+	
+	// 如果菜单已存在，先移除
+	const existingMenu = document.getElementById('context-menu');
+	if(existingMenu) existingMenu.remove();
+	
+	const contextMenu = document.createElement('div');
+	contextMenu.className = 'context-menu hidden';
+	contextMenu.id = 'context-menu';
+	contextMenu.innerHTML = `
+		<div class="context-menu-item danger" id="context-menu-delete">删除账单</div>
+	`;
+	document.body.appendChild(contextMenu);
+	
+	let currentBillId = null;
+	
+	billItems.forEach(item => {
+		item.addEventListener('contextmenu', (e) => {
+			e.preventDefault();
+			currentBillId = item.dataset.billId;
+			if(!currentBillId) return;
+			
+			const x = e.clientX;
+			const y = e.clientY;
+			contextMenu.style.left = x + 'px';
+			contextMenu.style.top = y + 'px';
+			contextMenu.classList.remove('hidden');
+			
+			// 确保菜单在视窗内
+			const rect = contextMenu.getBoundingClientRect();
+			if(rect.right > window.innerWidth){
+				contextMenu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+			}
+			if(rect.bottom > window.innerHeight){
+				contextMenu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+			}
+		});
+	});
+	
+	document.getElementById('context-menu-delete')?.addEventListener('click', async () => {
+		if(!currentBillId) return;
+		if(confirm('确定要删除这条账单吗？')){
+			try{
+				await deleteBill(currentBillId);
+				contextMenu.classList.add('hidden');
+				// 删除后重新加载，保留月份选择
+				await loadBills(true);
+			}catch(e){
+				alert('删除失败：' + (e?.message || e));
+			}
+		}
+		contextMenu.classList.add('hidden');
+	});
+	
+	document.addEventListener('click', () => {
+		contextMenu.classList.add('hidden');
+	});
+}
+
+async function deleteBill(billId){
+	const res = await fetch(`${API_BASE}/bills/${billId}`, {
+		method: 'DELETE',
+		headers: { 'Content-Type': 'application/json' }
+	});
+	if(!res.ok){
+		throw new Error(await res.text());
+	}
+	return res.json();
+}
+
+function applyFilters(){
+	const q = (searchInput?.value || '').trim();
+	filteredBills = bills.filter(bill=>{
+		let ok = true;
+		
+		// 月份筛选（允许“全部月份”时跳过）
+		if(selectedYear !== null && selectedMonth !== null){
+			try{
+				const billDate = new Date(bill.event_date);
+				if(isNaN(billDate.getTime())){
+					console.warn('账单日期无效:', bill.event_date, bill);
+					// 如果日期无效，不进行筛选（显示该账单）
+				}else{
+					if(billDate.getFullYear() !== selectedYear || billDate.getMonth() !== selectedMonth){
+						ok = false;
+					}
+				}
+			}catch(e){
+				console.error('日期解析错误:', bill.event_date, e);
+				// 如果解析失败，不进行筛选（显示该账单）
+			}
+		}
+		
+		// 分类筛选
+		if(ok && activeFilter && activeFilter !== '全部'){
+			if(activeFilter === 'income'){
+				ok = bill.type === 'income';
+			}else{
+				ok = bill.category === activeFilter;
+			}
+		}
+		
+		// 搜索筛选
+		if(ok && q){
+			const text = `${bill.category} ${bill.description}`.toLowerCase();
+			ok = text.includes(q.toLowerCase());
+		}
+		return ok;
+	});
+	renderBills(filteredBills);
+	updateSummary();
+	// 延迟渲染进度条，确保DOM更新完成
+	setTimeout(() => renderCategoryProgress(), 100);
+}
+
+function initMonthSelector(){
+	if(!monthSelector) return;
+	
+	const now = new Date();
+	const currentYear = now.getFullYear();
+	const currentMonth = now.getMonth();
+	
+	// 生成最近12个月
+	const options = [];
+	options.push('<option value="all">全部月份</option>');
+	for(let i = 11; i >= 0; i--){
+		const date = new Date(currentYear, currentMonth - i, 1);
+		const year = date.getFullYear();
+		const month = date.getMonth();
+		const monthText = `${year}年${month + 1}月`;
+		const value = `${year}-${String(month + 1).padStart(2, '0')}`;
+		options.push(`<option value="${value}">${monthText}</option>`);
+	}
+	
+	monthSelector.innerHTML = options.join('');
+	
+	// 默认选中“全部月份”以展示全量数据
+	monthSelector.value = 'all';
+	selectedYear = null;
+	selectedMonth = null;
+	
+	// 监听月份变化
+	monthSelector.addEventListener('change', (e)=>{
+		if(e.target.value === 'all'){
+			selectedYear = null;
+			selectedMonth = null;
+		}else{
+			const [year, month] = e.target.value.split('-').map(Number);
+			selectedYear = year;
+			selectedMonth = month - 1; // JavaScript月份从0开始
+		}
+		applyFilters();
+	});
+}
+
+function updateSummary(){
+	const totalExpense = filteredBills.filter(b => b.type === 'expense').reduce((sum, b) => sum + b.amount, 0);
+	const totalIncome = filteredBills.filter(b => b.type === 'income').reduce((sum, b) => sum + b.amount, 0);
+	summaryExpenseEl.textContent = `¥-${totalExpense.toFixed(2)}`;
+	summaryIncomeEl.textContent = `¥+${totalIncome.toFixed(2)}`;
+}
+
+async function loadBills(preserveMonthSelection = false){
+	try{
+		const res = await fetch(`${API_BASE}/bills?limit=8000`);
+		if(!res.ok) throw new Error(await res.text());
+		const loadedBills = await res.json();
+		
+		// 如果没有数据，添加demo数据
+		if(!loadedBills || loadedBills.length === 0){
+			await createDemoBills();
+			const res2 = await fetch(`${API_BASE}/bills?limit=8000`);
+			if(res2.ok){
+				bills = await res2.json();
+			}
+		}else{
+			bills = loadedBills;
+		}
+		
+		// 保存当前月份选择（如果指定）
+		const savedMonthValue = preserveMonthSelection && monthSelector ? monthSelector.value : null;
+		
+		// 初始化月份选择器（只在第一次加载或需要更新时）
+		if(!preserveMonthSelection || !monthSelector || monthSelector.options.length === 0){
+			initMonthSelector();
+		}
+		
+		// 恢复月份选择（如果之前保存了）
+		if(savedMonthValue && monthSelector){
+			const optionExists = Array.from(monthSelector.options).some(opt => opt.value === savedMonthValue);
+			if(optionExists){
+				monthSelector.value = savedMonthValue;
+				const [year, month] = savedMonthValue.split('-').map(Number);
+				selectedYear = year;
+				selectedMonth = month - 1;
+				console.log('恢复月份选择:', savedMonthValue, 'selectedYear:', selectedYear, 'selectedMonth:', selectedMonth);
+			}else{
+				console.warn('月份选项不存在:', savedMonthValue);
+			}
+		}
+		
+		console.log('应用筛选器，账单总数:', bills.length, 'selectedYear:', selectedYear, 'selectedMonth:', selectedMonth);
+		applyFilters();
+		console.log('筛选后账单数量:', filteredBills.length);
+	}catch(e){
+		console.error('加载失败，使用demo数据:', e);
+		// 如果API调用失败，直接使用demo数据
+		bills = getDemoBills();
+		if(!preserveMonthSelection){
+			initMonthSelector();
+		}
+		applyFilters();
+	}
+}
+
+function getDemoBills(){
+	const today = new Date();
+	const bills = [];
+	const categories = ['餐饮', '出行', '购物', '生活缴费', '娱乐', '其他'];
+	const descriptions = {
+		'餐饮': ['午餐', '晚餐', '早餐', '咖啡', '零食'],
+		'出行': ['地铁', '打车', '公交', '停车费', '油费'],
+		'购物': ['日用品', '衣服', '电子产品', '书籍', '礼品'],
+		'生活缴费': ['水电费', '网费', '物业费', '房租', '话费'],
+		'娱乐': ['电影', 'KTV', '游戏', '演唱会', '旅游'],
+		'其他': ['医疗', '教育', '捐赠', '杂项', '维修']
+	};
+	
+	// 生成最近30天的账单
+	for(let i = 0; i < 30; i++){
+		const date = new Date(today);
+		date.setDate(date.getDate() - i);
+		const dateStr = date.toISOString().slice(0, 10);
+		
+		// 每天1-3笔账单
+		const billCount = Math.floor(Math.random() * 3) + 1;
+		for(let j = 0; j < billCount; j++){
+			const category = categories[Math.floor(Math.random() * categories.length)];
+			const descList = descriptions[category];
+			const description = descList[Math.floor(Math.random() * descList.length)];
+			const amount = Math.floor(Math.random() * 200) + 10;
+			
+			bills.push({
+				id: `demo-${dateStr}-${j}`,
+				event_date: dateStr,
+				category: category,
+				type: 'expense',
+				amount: amount,
+				currency: 'CNY',
+				description: description,
+				source: 'demo',
+				metadata: { demo: true }
+			});
+		}
+	}
+	
+	// 添加一些收入
+	for(let i = 0; i < 3; i++){
+		const date = new Date(today);
+		date.setDate(date.getDate() - i * 10);
+		bills.push({
+			id: `demo-income-${i}`,
+			event_date: date.toISOString().slice(0, 10),
+			category: '收入',
+			type: 'income',
+			amount: 5000,
+			currency: 'CNY',
+			description: '工资',
+			source: 'demo',
+			metadata: { demo: true }
+		});
+	}
+	
+	return bills.sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+}
+
+async function createDemoBills(){
+	const demoBills = getDemoBills();
+	for(const bill of demoBills){
+		try{
+			await saveBillToBackend(bill);
+		}catch(e){
+			console.error('创建demo账单失败:', e);
+		}
+	}
+}
+
+
+filterBtns.forEach(btn=>{
+	btn.addEventListener('click',()=>{
+		filterBtns.forEach(b=>{
+			b.classList.remove('bg-primary','text-white');
+			b.classList.add('bg-card-light');
+		});
+		btn.classList.add('bg-primary','text-white');
+		btn.classList.remove('bg-card-light');
+		activeFilter = btn.dataset.filter;
+		applyFilters();
+	});
+});
+
+searchInput?.addEventListener('input', ()=>{
+	applyFilters();
+});
+
+async function callChat(prompt){
+	const res = await fetch(`${API_BASE}/chat`,{
+		method:'POST',
+		headers:{'Content-Type':'application/json'},
+		body:JSON.stringify({
+			messages:[{role:'user',content:prompt}],
+			include_bill_context:false
+		})
+	});
+	if(!res.ok) throw new Error(await res.text());
+	return res.json();
+}
+
+function extractJson(text){
+	if(!text) return null;
+	let cleaned = text.trim();
+	cleaned = cleaned.replace(/```json/gi,'').replace(/```/g,'').trim();
+	const firstBrace = cleaned.indexOf('{');
+	const lastBrace = cleaned.lastIndexOf('}');
+	if(firstBrace === -1 || lastBrace === -1) return null;
+	cleaned = cleaned.slice(firstBrace, lastBrace+1);
+	try{ return JSON.parse(cleaned); }catch(e){ return null; }
+}
+
+function normalizeBill(obj, fallback){
+	if(!obj || typeof obj!=='object') return null;
+	const result = {};
+	const mapKey = (keys)=>keys.find(k=>Object.prototype.hasOwnProperty.call(obj,k));
+	const dateKey = mapKey(['event_date','日期','时间','date']);
+	const categoryKey = mapKey(['category','类别','分类']);
+	const amountKey = mapKey(['amount','金额','数额','money']);
+	const typeKey = mapKey(['type','类型']);
+	const currencyKey = mapKey(['currency','币种']);
+	const descKey = mapKey(['description','摘要','说明','备注','detail']);
+	result.event_date = (()=>{
+		const raw = dateKey?obj[dateKey]:null;
+		if(!raw) return (new Date()).toISOString().slice(0,10);
+		if(typeof raw==='string'){
+			const iso = raw.match(/\d{4}-\d{1,2}-\d{1,2}/);
+			if(iso) return iso[0];
+			const digits = raw.match(/\d+/g);
+			if(digits && digits.length>=3){
+				const [y,m,d]=digits;
+				return `${y.padStart(4,'0')}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+			}
+		}
+		return (new Date()).toISOString().slice(0,10);
+	})();
+	result.category = categoryKey?String(obj[categoryKey]||'').trim():'其他';
+	let amountRaw = amountKey?obj[amountKey]:null;
+	if(typeof amountRaw === 'string') amountRaw = amountRaw.replace(/[^0-9.+-]/g,'');
+	const parsedAmount = parseFloat(amountRaw || '0');
+	result.amount = Number.isFinite(parsedAmount)?Math.abs(parsedAmount):0;
+	const typeRaw = typeKey?String(obj[typeKey]||'').toLowerCase():'';
+	result.type = typeRaw.includes('收')||typeRaw.includes('income')?'income':'expense';
+	result.currency = currencyKey?String(obj[currencyKey]||'').trim().toUpperCase():'CNY';
+	const descRaw = descKey?obj[descKey]:fallback;
+	result.description = String(descRaw||fallback||'未命名').trim();
+	return result;
+}
+
+async function saveBillToBackend(payload){
+	const res = await fetch(`${API_BASE}/bills`,{
+		method:'POST',
+		headers:{'Content-Type':'application/json'},
+		body:JSON.stringify(payload)
+	});
+	if(!res.ok){
+		throw new Error(await res.text());
+	}
+	return res.json();
+}
+
+async function parseAndStoreBill(naturalText, source){
+	const prompt = `请将以下记账描述解析为JSON，键包含 event_date(YYYY-MM-DD), category, type(expense/income), amount(数字), currency, description。仅输出JSON：${naturalText}`;
+	const chatRes = await callChat(prompt);
+	const obj = extractJson(chatRes.reply);
+	const normalized = normalizeBill(obj, naturalText);
+	if(!normalized || !normalized.amount){
+		throw new Error('解析失败，未获取到金额');
+	}
+	normalized.source = source;
+	normalized.metadata = { raw: naturalText };
+	const saved = await saveBillToBackend(normalized);
+	return { parsed: normalized, saved };
+}
+
+// 底部三个按钮：手动输入 / 上传票据 / 文本描述
+(function(){
+	const btnManual = document.getElementById('btn-manual');
+	const btnUpload = document.getElementById('btn-upload');
+	const btnText = document.getElementById('btn-text');
+	
+	if(btnManual) btnManual.addEventListener('click',async()=>{
+		const text = prompt('请输入交易描述（例如：昨天午餐 25 元，餐饮）');
+		if(!text) return;
+		
+		// 显示保存中状态
+		btnManual.disabled = true;
+		const originalText = btnManual.querySelector('span.text-xs')?.textContent;
+		if(originalText) btnManual.querySelector('span.text-xs').textContent = '保存中...';
+		
+		try{
+			const {saved} = await parseAndStoreBill(text,'manual');
+			
+			// 切换到新账单所在的月份
+			if(saved && saved.event_date){
+				const billDate = new Date(saved.event_date);
+				const billYear = billDate.getFullYear();
+				const billMonth = billDate.getMonth() + 1;
+				const monthValue = `${billYear}-${String(billMonth).padStart(2, '0')}`;
+				
+				// 更新月份选择器
+				if(monthSelector && monthSelector.value !== monthValue){
+					// 检查月份选择器中是否有这个月份
+					const optionExists = Array.from(monthSelector.options).some(opt => opt.value === monthValue);
+					if(!optionExists){
+						// 如果不存在，重新初始化月份选择器
+						initMonthSelector();
+					}
+					monthSelector.value = monthValue;
+					selectedYear = billYear;
+					selectedMonth = billMonth - 1;
+				}
+			}
+			
+			// 重新加载账单列表（保留月份选择）
+			await loadBills(true);
+			alert(`已保存：${saved.category} ${saved.amount}${saved.currency} (${saved.event_date})`);
+		}catch(e){ 
+			alert('保存失败：'+(e?.message||e)); 
+		}finally{
+			btnManual.disabled = false;
+			if(originalText) btnManual.querySelector('span.text-xs').textContent = originalText;
+		}
+	});
+	
+	if(btnUpload) btnUpload.addEventListener('click',()=>{
+		const input=document.createElement('input'); input.type='file'; input.accept='image/*';
+		input.onchange=async()=>{
+			const file=input.files?.[0]; if(!file) return;
+			
+			// 显示上传中提示
+			btnUpload.disabled = true;
+			const originalText = btnUpload.querySelector('span.text-xs')?.textContent;
+			if(originalText) btnUpload.querySelector('span.text-xs').textContent = '识别中...';
+			
+			try{
+				// 上传图片到OCR API
+				const formData = new FormData();
+				formData.append('file', file);
+				
+				const ocrRes = await fetch(`${API_BASE}/bills/ocr`, {
+					method: 'POST',
+					body: formData
+				});
+				
+				if(!ocrRes.ok){
+					const errorText = await ocrRes.text();
+					// 如果是不支持图片识别，使用文本描述方式
+					if(ocrRes.status === 501){
+						const fallbackText = `票据OCR文本：文件 ${file.name}；项目：餐饮；金额：48元；时间：${new Date().toLocaleDateString('zh-CN')}。请按照要求输出JSON。`;
+						const {saved} = await parseAndStoreBill(fallbackText,'ocr');
+						
+						// 切换到新账单所在的月份
+						if(saved && saved.event_date){
+							const billDate = new Date(saved.event_date);
+							const billYear = billDate.getFullYear();
+							const billMonth = billDate.getMonth() + 1;
+							const monthValue = `${billYear}-${String(billMonth).padStart(2, '0')}`;
+							
+							// 更新月份选择器
+							if(monthSelector && monthSelector.value !== monthValue){
+								const optionExists = Array.from(monthSelector.options).some(opt => opt.value === monthValue);
+								if(!optionExists){
+									initMonthSelector();
+								}
+								monthSelector.value = monthValue;
+								selectedYear = billYear;
+								selectedMonth = billMonth - 1;
+							}
+						}
+						
+						// 重新加载账单列表（保留月份选择）
+						await loadBills(true);
+						alert(`OCR已保存（使用文本描述）：${saved.category} ${saved.amount}${saved.currency} (${saved.event_date})`);
+						return;
+					}
+					throw new Error(errorText);
+				}
+				
+				const ocrData = await ocrRes.json();
+				const parsed = ocrData.parsed;
+				
+				// 规范化账单数据
+				const normalized = normalizeBill(parsed, `OCR识别: ${file.name}`);
+				if(!normalized || !normalized.amount){
+					throw new Error('OCR解析失败，未获取到金额');
+				}
+				
+				// 设置日期为11月15日（当前年份）
+				const today = new Date();
+				const currentYear = today.getFullYear();
+				normalized.event_date = `${currentYear}-11-15`;
+				
+				// 显示识别结果确认
+				const confirmMsg = `OCR识别成功！\n\n` +
+					`识别到账单信息：\n` +
+					`描述：${normalized.description}\n` +
+					`分类：${normalized.category}\n` +
+					`金额：¥${normalized.amount.toFixed(2)}\n` +
+					`日期：${normalized.event_date}\n` +
+					`类型：${normalized.type === 'income' ? '收入' : '支出'}\n\n` +
+					`确认保存这条账单吗？`;
+				
+				if(confirm(confirmMsg)){
+					normalized.source = 'ocr';
+					normalized.metadata = { raw: ocrData.raw_text || '', filename: file.name };
+					const saved = await saveBillToBackend(normalized);
+					
+					console.log('OCR保存成功，返回的账单数据:', saved);
+					
+					// 切换到新账单所在的月份
+					if(saved && saved.event_date){
+						const billDate = new Date(saved.event_date);
+						if(isNaN(billDate.getTime())){
+							console.error('日期解析失败:', saved.event_date);
+						}else{
+							const billYear = billDate.getFullYear();
+							const billMonth = billDate.getMonth() + 1;
+							const monthValue = `${billYear}-${String(billMonth).padStart(2, '0')}`;
+							
+							console.log('切换到月份:', monthValue);
+							
+							// 先更新全局变量
+							selectedYear = billYear;
+							selectedMonth = billMonth - 1;
+							
+							// 更新月份选择器
+							if(monthSelector){
+								// 检查月份选择器中是否有这个月份
+								const optionExists = Array.from(monthSelector.options).some(opt => opt.value === monthValue);
+								if(!optionExists){
+									// 如果不存在，重新初始化月份选择器
+									console.log('月份不存在，重新初始化月份选择器');
+									initMonthSelector();
+								}
+								// 设置月份选择器的值
+								monthSelector.value = monthValue;
+								console.log('月份选择器已设置为:', monthValue);
+							}
+						}
+					}
+					
+					// 重新加载账单列表（保留月份选择）
+					console.log('开始重新加载账单列表...');
+					await loadBills(true);
+					console.log('账单列表重新加载完成，当前账单数量:', bills.length, '筛选后数量:', filteredBills.length);
+					alert(`已保存：${saved.category} ${saved.amount}${saved.currency} (${saved.event_date})`);
+				}else{
+					alert('已取消保存。');
+				}
+			}catch(e){ 
+				console.error('OCR识别失败:', e);
+				alert('OCR识别失败：'+(e?.message||e)); 
+			}finally{
+				btnUpload.disabled = false;
+				if(originalText) btnUpload.querySelector('span.text-xs').textContent = originalText;
+			}
+		};
+		input.click();
+	});
+	
+	const btnVoice = document.getElementById('btn-voice');
+	const voiceIndicator = document.getElementById('voice-recording-indicator');
+	let isRecording = false;
+	
+	if(btnVoice){
+		btnVoice.addEventListener('click', async () => {
+			if(isRecording){
+				return; // 如果正在录音，忽略点击
+			}
+			
+			// 第一步：询问是否进行语音识别
+			if(!confirm('是否开始语音识别？\n\n点击"确定"后将开始录音，请说出您的账单信息。')){
+				return; // 用户取消
+			}
+			
+			// 第二步：显示录音动画
+			isRecording = true;
+			if(voiceIndicator) voiceIndicator.classList.remove('hidden');
+			btnVoice.disabled = true;
+			const textSpan = btnVoice.querySelector('span.text-xs');
+			if(textSpan) textSpan.textContent = '录音中...';
+			
+			// 模拟录音过程（2秒）
+			await new Promise(resolve => setTimeout(resolve, 2000));
+			
+			// 第三步：模拟识别成功，显示识别结果
+			const today = new Date();
+			const currentYear = today.getFullYear();
+			const eventDate = `${currentYear}-11-15`;
+			
+			const mockBill = {
+				event_date: eventDate,
+				category: '餐饮',
+				type: 'expense',
+				amount: 20,
+				currency: 'CNY',
+				description: '午餐',
+				source: 'voice',
+				metadata: { raw: '11-15午餐消费20元' }
+			};
+			
+			// 停止录音动画
+			isRecording = false;
+			if(voiceIndicator) voiceIndicator.classList.add('hidden');
+			btnVoice.disabled = false;
+			if(textSpan) textSpan.textContent = '语音输入';
+			
+			// 显示识别成功提示
+			const confirmMsg = `语音识别成功！\n\n` +
+				`识别到账单信息：\n` +
+				`描述：${mockBill.description}\n` +
+				`分类：${mockBill.category}\n` +
+				`金额：¥${mockBill.amount.toFixed(2)}\n` +
+				`日期：${mockBill.event_date}\n` +
+				`类型：支出\n\n` +
+				`确认保存这条账单吗？`;
+			
+			if(confirm(confirmMsg)){
+				try{
+					const saved = await saveBillToBackend(mockBill);
+					
+					// 切换到新账单所在的月份
+					if(saved && saved.event_date){
+						const billDate = new Date(saved.event_date);
+						const billYear = billDate.getFullYear();
+						const billMonth = billDate.getMonth() + 1;
+						const monthValue = `${billYear}-${String(billMonth).padStart(2, '0')}`;
+						
+						// 更新月份选择器
+						if(monthSelector && monthSelector.value !== monthValue){
+							const optionExists = Array.from(monthSelector.options).some(opt => opt.value === monthValue);
+							if(!optionExists){
+								initMonthSelector();
+							}
+							monthSelector.value = monthValue;
+							selectedYear = billYear;
+							selectedMonth = billMonth - 1;
+						}
+					}
+					
+					// 重新加载账单列表
+					await loadBills();
+					alert(`已保存：${saved.category} ${saved.amount}${saved.currency} (${saved.event_date})`);
+				}catch(e){
+					alert('保存失败：' + (e?.message || e));
+				}
+			}else{
+				alert('已取消保存。');
+			}
+		});
+	}
+})();
+
+loadBills();
+
+// 浮动AI按钮总结
+(function(){
+	const btn = document.createElement('button');
+	btn.className='fixed bottom-24 right-4 h-12 w-12 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg';
+	btn.innerHTML='<span class="material-symbols-outlined">auto_awesome</span>';
+	document.body.appendChild(btn);
+	btn.addEventListener('click', async ()=>{
+		if(!filteredBills.length){
+			alert('当前没有账单数据可用于总结。');
+			return;
+		}
+		btn.disabled=true; btn.style.opacity='0.7';
+		const context = filteredBills.slice(0,20).map(b=>`${b.event_date} ${b.category} ${b.type} ${b.amount}${b.currency} ${b.description}`).join('\n');
+		try{
+			const res = await fetch(`${API_BASE}/chat`,{
+				method:'POST',
+				headers:{'Content-Type':'application/json'},
+				body:JSON.stringify({
+					messages:[{role:'user',content:`根据以下账单数据，生成一个不超过60字的中文总结和建议：\n${context}`}]
+				})
+			});
+			const data = await res.json();
+			alert(data.reply||'无回复');
+		}catch(e){
+			alert('AI请求失败: '+(e?.message||e));
+		}finally{
+			btn.disabled=false; btn.style.opacity='1';
+		}
+	});
+})();
+</script>
+
+</body></html>

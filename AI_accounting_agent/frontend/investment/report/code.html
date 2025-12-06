@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyst Daily Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <style>
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .prose h1 { font-size: 1.5em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
+        .prose h2 { font-size: 1.25em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose p { margin-bottom: 1em; line-height: 1.6; }
+        .prose strong { font-weight: 600; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div class="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pt-6 pb-32 space-y-6">
+        <header class="text-center space-y-2">
+            <h1 class="text-2xl font-bold" id="report-title">请选择股票查看报告</h1>
+            <p id="report-subtitle" class="text-sm text-gray-500">选中个股后自动生成 Analyst 报告，点击卡片触发 Trader 投资建议与智能调仓。</p>
+        </header>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined">analytics</span>
+                </div>
+                <div class="text-left">
+                    <p class="text-sm text-indigo-600 uppercase tracking-[0.3em]">Watchlist</p>
+                    <p class="text-base font-semibold text-gray-900">个股观察列表</p>
+                </div>
+            </div>
+            <nav id="watchlist" class="space-y-2 max-h-72 overflow-y-auto">
+                <div class="text-center text-gray-400 py-6">
+                    <p>加载中...</p>
+                </div>
+            </nav>
+        </section>
+
+        <div class="space-y-6" id="agent-panels">
+                <!-- Analyst Agent Panel -->
+                <section class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.3em] text-indigo-500">Analyst Agent</p>
+                            <h3 class="text-xl font-semibold text-gray-900 mt-1">基本面与行情解读</h3>
+                        </div>
+                        <button class="rounded-full p-2 text-gray-400 hover:text-gray-600" data-collapse-target="analyst-body">
+                            <span class="material-symbols-outlined" data-collapse-icon>expand_less</span>
+                        </button>
+                    </div>
+                    <div id="analyst-body" class="px-6 py-6 space-y-4">
+                        <div id="analyst-placeholder" class="text-center text-gray-400 py-10">
+                            <span class="material-symbols-outlined text-4xl mb-2">description</span>
+                            <p>从左侧列表选择一支股票以生成最新研究观点</p>
+                        </div>
+                        <div id="analyst-loading" class="hidden h-48 flex flex-col items-center justify-center text-indigo-600">
+                            <span class="material-symbols-outlined text-4xl animate-spin mb-2">sync</span>
+                            <p class="font-medium">Analyst Agent 正在分析市场数据...</p>
+                            <p class="text-sm text-gray-400 mt-2">请稍候</p>
+                        </div>
+                        <div id="analyst-report" class="hidden prose max-w-none"></div>
+                    </div>
+                </section>
+
+                <!-- Trader Agent Panel -->
+                <section class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.3em] text-emerald-500">Trader Agent</p>
+                            <h3 class="text-xl font-semibold text-gray-900 mt-1">智能投资建议</h3>
+                        </div>
+                        <button class="rounded-full p-2 text-gray-400 hover:text-gray-600" data-collapse-target="trader-body">
+                            <span class="material-symbols-outlined" data-collapse-icon>expand_less</span>
+                        </button>
+                    </div>
+                    <div id="trader-body" class="px-6 py-6 space-y-4">
+                        <div id="trader-placeholder" class="text-center text-gray-400 py-10">
+                            <span class="material-symbols-outlined text-4xl mb-2">trending_up</span>
+                            <p>点击下方按钮以生成交易建议</p>
+                            <button id="trader-generate" type="button" class="mt-4 inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow transition opacity-50 cursor-not-allowed" disabled>
+                                启动投资建议
+                            </button>
+                        </div>
+                        <div id="trader-loading" class="hidden h-40 flex flex-col items-center justify-center text-emerald-600">
+                            <span class="material-symbols-outlined text-4xl animate-spin mb-2">auto_mode</span>
+                            <p class="font-medium">Trader Agent 正在评估买入区间...</p>
+                            <p class="text-sm text-gray-400 mt-1">预计 5 秒钟完成</p>
+                        </div>
+                        <div id="trader-result" class="hidden space-y-4">
+                            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5">
+                                <p class="text-sm text-slate-500">交易建议</p>
+                                <p id="trader-suggestion" class="mt-2 text-base text-slate-900 leading-relaxed"></p>
+                            </div>
+                            <div class="flex flex-wrap gap-3">
+                                <button id="trader-accept" class="flex-1 min-w-[130px] rounded-full bg-emerald-600 text-white py-2 px-4 text-sm font-semibold hover:bg-emerald-500 transition">接受建议</button>
+                                <button id="trader-modify" class="flex-1 min-w-[130px] rounded-full border border-indigo-200 text-indigo-600 py-2 px-4 text-sm font-semibold hover:bg-indigo-50 transition">修改建议</button>
+                                <button id="trader-reject" class="flex-1 min-w-[130px] rounded-full border border-slate-200 text-slate-600 py-2 px-4 text-sm font-semibold hover:bg-slate-50 transition">拒绝建议</button>
+                            </div>
+                            <div id="trader-feedback" class="hidden text-sm font-semibold"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Rebalance Panel -->
+                <section class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Smart Rebalance</p>
+                            <h3 class="text-xl font-semibold text-gray-900 mt-1">智能调仓提示</h3>
+                        </div>
+                        <button class="rounded-full p-2 text-gray-400 hover:text-gray-600" data-collapse-target="rebalance-body">
+                            <span class="material-symbols-outlined" data-collapse-icon>expand_less</span>
+                        </button>
+                    </div>
+                    <div id="rebalance-body" class="px-6 py-6 space-y-4">
+                        <div id="rebalance-placeholder" class="text-center text-gray-400 py-10">
+                            <span class="material-symbols-outlined text-4xl mb-2">balance</span>
+                            <p>完成投资建议后，可手动触发智能调仓提示</p>
+                            <button id="rebalance-generate" type="button" class="mt-4 inline-flex items-center justify-center rounded-full bg-slate-800 px-5 py-2 text-sm font-semibold text-white shadow opacity-50 cursor-not-allowed" disabled>
+                                生成调仓建议
+                            </button>
+                        </div>
+                        <div id="rebalance-content" class="hidden space-y-3">
+                            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5">
+                                <p class="text-sm font-semibold text-slate-600">调仓建议</p>
+                                <p id="rebalance-summary" class="mt-2 text-base text-slate-900 leading-relaxed"></p>
+                            </div>
+                            <div class="bg-white border border-slate-100 rounded-2xl p-5 space-y-2">
+                                <p class="text-sm text-slate-500">理由：</p>
+                                <ul class="list-disc pl-5 text-sm text-slate-700 space-y-1" id="rebalance-reasons"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-200 bg-white/95 backdrop-blur-md">
+        <div class="mx-auto flex max-w-md items-stretch justify-between px-2">
+            <a href="../welcome/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">home</span>
+                <span class="text-[11px] font-semibold">开始</span>
+            </a>
+            <a href="../risk/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">shield_person</span>
+                <span class="text-[11px] font-semibold">风险评估</span>
+            </a>
+            <a href="../report/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-indigo-600">
+                <span class="material-symbols-outlined text-xl">analytics</span>
+                <span class="text-[11px] font-semibold">智能投资</span>
+            </a>
+            <a href="../trader_chat/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">forum</span>
+                <span class="text-[11px] font-semibold">金融问答</span>
+            </a>
+            <a href="../visual/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-indigo-600">
+                <span class="material-symbols-outlined text-xl">dashboard</span>
+                <span class="text-[11px] font-semibold">仪表盘</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Modify Suggestion Dialog -->
+    <div id="modify-dialog" class="fixed inset-0 hidden items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.3em] text-indigo-500">Trader Agent</p>
+                    <h4 class="text-lg font-semibold text-gray-900 mt-1">调整投资建议</h4>
+                </div>
+                <button id="modify-close" class="rounded-full p-1 text-gray-500 hover:bg-gray-100">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div>
+                <label for="modify-input" class="text-sm text-gray-500">请输入修改后的投资建议</label>
+                <textarea id="modify-input" class="mt-2 w-full rounded-xl border border-gray-200 p-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 h-32"></textarea>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="modify-cancel" class="rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-600">取消</button>
+                <button id="modify-save" class="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-500">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.localStorage.getItem('AI_TRADER_API') || 'http://localhost:8020';
+        const watchlistContainer = document.getElementById('watchlist');
+        const reportTitle = document.getElementById('report-title');
+        const reportSubtitle = document.getElementById('report-subtitle');
+
+        const analystPlaceholder = document.getElementById('analyst-placeholder');
+        const analystLoading = document.getElementById('analyst-loading');
+        const analystReport = document.getElementById('analyst-report');
+
+        const traderPlaceholder = document.getElementById('trader-placeholder');
+        const traderLoading = document.getElementById('trader-loading');
+        const traderResult = document.getElementById('trader-result');
+        const traderSuggestionEl = document.getElementById('trader-suggestion');
+        const traderFeedback = document.getElementById('trader-feedback');
+        const traderAcceptBtn = document.getElementById('trader-accept');
+        const traderModifyBtn = document.getElementById('trader-modify');
+        const traderRejectBtn = document.getElementById('trader-reject');
+        const traderGenerateBtn = document.getElementById('trader-generate');
+
+        const rebalancePlaceholder = document.getElementById('rebalance-placeholder');
+        const rebalanceContent = document.getElementById('rebalance-content');
+        const rebalanceSummary = document.getElementById('rebalance-summary');
+        const rebalanceReasons = document.getElementById('rebalance-reasons');
+        const rebalanceGenerateBtn = document.getElementById('rebalance-generate');
+
+        const modifyDialog = document.getElementById('modify-dialog');
+        const modifyInput = document.getElementById('modify-input');
+        const modifySave = document.getElementById('modify-save');
+        const modifyCancel = document.getElementById('modify-cancel');
+        const modifyClose = document.getElementById('modify-close');
+
+        const defaultAnalystPlaceholderHTML = analystPlaceholder?.innerHTML;
+
+        let currentStock = null;
+        let analystRequestToken = null;
+        let traderTimer = null;
+
+        function setButtonState(button, enabled) {
+            if (!button) return;
+            if (enabled) {
+                button.removeAttribute('disabled');
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                button.setAttribute('disabled', 'disabled');
+                if (!button.classList.contains('opacity-50')) button.classList.add('opacity-50');
+                if (!button.classList.contains('cursor-not-allowed')) button.classList.add('cursor-not-allowed');
+            }
+        }
+
+        async function fetchWatchlist() {
+            try {
+                const res = await fetch(`${API_BASE}/trader/watchlist`);
+                if (!res.ok) throw new Error('无法获取自选股');
+                const stocks = await res.json();
+
+                watchlistContainer.innerHTML = '';
+                stocks.forEach((stock) => {
+                    const item = document.createElement('a');
+                    item.href = '#';
+                    item.className = 'flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-100';
+                    item.dataset.stockCode = stock.code;
+                    item.dataset.stockName = stock.name;
+                    item.innerHTML = `
+                        <span class="flex-1 truncate">${stock.name}</span>
+                        <span class="text-gray-400">${stock.code}</span>
+                    `;
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        selectStock(stock.code, stock.name);
+                    });
+                    watchlistContainer.appendChild(item);
+                });
+            } catch (error) {
+                console.error(error);
+                watchlistContainer.innerHTML = '<p class="text-red-500 text-sm">无法加载股票列表。</p>';
+            }
+        }
+
+        function selectStock(code, name) {
+            currentStock = { code, name };
+            reportTitle.textContent = `分析报告: ${name} (${code})`;
+            reportSubtitle.textContent = 'Analyst Agent 正在生成研究结果，完成后可点击下方按钮获取投资与调仓建议。';
+
+            resetAnalystPlaceholder();
+            resetTraderPlaceholder();
+            resetTraderState();
+            resetRebalancePanel();
+
+            document.querySelectorAll('#watchlist a').forEach((el) => {
+                if (el.dataset.stockCode === code) {
+                    el.classList.add('bg-indigo-50', 'text-indigo-700');
+                } else {
+                    el.classList.remove('bg-indigo-50', 'text-indigo-700');
+                }
+            });
+
+            startAnalystSequence();
+        }
+
+        function resetAnalystPlaceholder() {
+            if (analystPlaceholder && defaultAnalystPlaceholderHTML) {
+                analystPlaceholder.innerHTML = defaultAnalystPlaceholderHTML;
+            }
+        }
+
+        function resetTraderPlaceholder() {
+            traderPlaceholder?.classList.remove('hidden');
+            if (traderGenerateBtn) {
+                traderGenerateBtn.textContent = '启动投资建议';
+            }
+        }
+
+        function resetRebalancePanel() {
+            rebalancePlaceholder?.classList.remove('hidden');
+            rebalanceContent?.classList.add('hidden');
+            if (rebalanceSummary) rebalanceSummary.textContent = '';
+            if (rebalanceReasons) rebalanceReasons.innerHTML = '';
+            setButtonState(rebalanceGenerateBtn, false);
+        }
+
+        function resetTraderState() {
+            if (traderTimer) {
+                clearTimeout(traderTimer);
+                traderTimer = null;
+            }
+            traderLoading.classList.add('hidden');
+            traderResult.classList.add('hidden');
+            traderFeedback.classList.add('hidden');
+            traderFeedback.textContent = '';
+            traderSuggestionEl.textContent = '';
+            traderPlaceholder.classList.remove('hidden');
+            setButtonState(traderGenerateBtn, Boolean(currentStock));
+        }
+
+        async function startAnalystSequence() {
+            if (!currentStock) return false;
+            analystPlaceholder.classList.add('hidden');
+            analystReport.classList.add('hidden');
+            analystReport.innerHTML = '';
+            analystLoading.classList.remove('hidden');
+
+            const requestToken = Date.now();
+            analystRequestToken = requestToken;
+
+            try {
+                const res = await fetch(`${API_BASE}/trader/stock/${currentStock.code}/daily_report`, { method: 'POST' });
+                if (!res.ok) throw new Error('生成失败');
+                const data = await res.json();
+                if (analystRequestToken !== requestToken) return false;
+                const markdown = sanitizeAnalystMarkdown(data.reply || '');
+                analystReport.innerHTML = markdown ? marked.parse(markdown) : '<p class="text-gray-500">暂未获取到有效内容。</p>';
+                analystLoading.classList.add('hidden');
+                analystReport.classList.remove('hidden');
+                return true;
+            } catch (error) {
+                if (analystRequestToken !== requestToken) return false;
+                console.error(error);
+                analystLoading.classList.add('hidden');
+                analystPlaceholder.classList.remove('hidden');
+                analystPlaceholder.innerHTML = '<p class="text-red-500">生成分析失败，请稍后再试。</p>';
+                return false;
+            }
+        }
+
+        function sanitizeAnalystMarkdown(markdown) {
+            if (!markdown) return '';
+            return markdown
+                .split('\n')
+                .filter((line) => {
+                    const trimmed = line.trim();
+                    return trimmed && !/^思考/.test(trimmed) && !/^推理/.test(trimmed) && !/^Reasoning/i.test(trimmed);
+                })
+                .join('\n');
+        }
+
+        function startTraderSequence() {
+            if (!currentStock) return;
+            if (traderTimer) {
+                clearTimeout(traderTimer);
+                traderTimer = null;
+            }
+            setButtonState(traderGenerateBtn, false);
+            traderPlaceholder.classList.add('hidden');
+            traderResult.classList.add('hidden');
+            traderFeedback.classList.add('hidden');
+            traderFeedback.textContent = '';
+            traderSuggestionEl.textContent = '';
+            traderLoading.classList.remove('hidden');
+
+            const suggestion = buildTraderSuggestion(currentStock);
+            traderTimer = setTimeout(() => {
+                traderLoading.classList.add('hidden');
+                traderResult.classList.remove('hidden');
+                traderSuggestionEl.textContent = suggestion;
+                setButtonState(rebalanceGenerateBtn, true);
+            }, 5000);
+        }
+
+        function buildTraderSuggestion(stock) {
+            const name = stock?.name ? `${stock.name} (${stock.code})` : '该标的';
+            return `${name}：建议买入，买入数量区间：50-100股。理由：市场分析：中期分红预期明确，业绩增长与政策利好共振。个性化建议：整体风险承受力处于中等水平，可在安全和收益之间平衡配置。`;
+        }
+
+        function setTraderFeedback(message, variantClass) {
+            traderFeedback.textContent = message;
+            traderFeedback.className = `text-sm font-semibold ${variantClass}`;
+            traderFeedback.classList.remove('hidden');
+        }
+
+        traderGenerateBtn?.addEventListener('click', () => {
+            if (traderGenerateBtn.disabled) return;
+            startTraderSequence();
+        });
+
+        traderAcceptBtn?.addEventListener('click', () => {
+            setTraderFeedback('买入成功，请在仪表盘查看。', 'text-emerald-600');
+        });
+
+        traderRejectBtn?.addEventListener('click', () => {
+            setTraderFeedback('已拒绝。', 'text-red-500');
+        });
+
+        traderModifyBtn?.addEventListener('click', () => {
+            if (!traderSuggestionEl.textContent) return;
+            modifyInput.value = traderSuggestionEl.textContent.trim();
+            openModifyDialog();
+        });
+
+        rebalanceGenerateBtn?.addEventListener('click', () => {
+            if (rebalanceGenerateBtn.disabled) return;
+            startRebalanceSequence();
+        });
+
+        function startRebalanceSequence() {
+            if (!currentStock) return;
+            setButtonState(rebalanceGenerateBtn, false);
+            showRebalanceInsight(currentStock);
+        }
+
+        function showRebalanceInsight(stock) {
+            if (!stock) return;
+            rebalancePlaceholder?.classList.add('hidden');
+            if (rebalanceSummary) {
+                const displayCode = stock.code || '--';
+                const displayName = stock.name || '该标的';
+                rebalanceSummary.textContent = `股票名称加代码：${displayName} (${displayCode})，建议卖出50股。`;
+            }
+            if (rebalanceReasons) {
+                const reasonItems = [
+                    '宏观市场波动：近期整体市场风险偏好下降，资金更趋向规避波动性资产，使得个股短期承压。',
+                    '行业情绪变化：当前行业情绪出现回落，主要受到板块资金流出与基本面预期弱化影响，可能放大个股波动幅度。',
+                    '个人账户动态：当前您用于投资的资金占比过高，本月可支配收入较年平均值下降30%，应采取更稳健的投资组合。',
+                ];
+                rebalanceReasons.innerHTML = '';
+                reasonItems.forEach((text) => {
+                    const li = document.createElement('li');
+                    li.textContent = text;
+                    rebalanceReasons.appendChild(li);
+                });
+            }
+            rebalanceContent?.classList.remove('hidden');
+        }
+
+        function openModifyDialog() {
+            modifyDialog.classList.remove('hidden');
+            modifyDialog.classList.add('flex');
+            requestAnimationFrame(() => modifyInput.focus());
+        }
+
+        function closeModifyDialog() {
+            modifyDialog.classList.remove('flex');
+            modifyDialog.classList.add('hidden');
+        }
+
+        modifyCancel?.addEventListener('click', closeModifyDialog);
+        modifyClose?.addEventListener('click', closeModifyDialog);
+        modifyDialog?.addEventListener('click', (e) => {
+            if (e.target === modifyDialog) {
+                closeModifyDialog();
+            }
+        });
+
+        modifySave?.addEventListener('click', () => {
+            const updated = modifyInput.value.trim();
+            if (updated) {
+                traderSuggestionEl.textContent = updated;
+                setTraderFeedback('已更新投资建议。', 'text-indigo-600');
+            }
+            closeModifyDialog();
+        });
+
+        document.querySelectorAll('[data-collapse-target]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-collapse-target');
+                const body = document.getElementById(targetId);
+                if (!body) return;
+                body.classList.toggle('hidden');
+                const icon = btn.querySelector('[data-collapse-icon]');
+                if (icon) {
+                    icon.textContent = body.classList.contains('hidden') ? 'expand_more' : 'expand_less';
+                }
+            });
+        });
+
+        fetchWatchlist();
+    </script>
+</body>
+</html>

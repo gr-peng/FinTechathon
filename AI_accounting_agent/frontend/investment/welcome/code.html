@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI投资助手</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#3B82F6", // A nice shade of blue
+            "background-light": "#F7FAFC",
+          },
+          fontFamily: {
+            "display": ["'Noto Sans SC'", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "1rem",
+            "lg": "1.5rem",
+            "xl": "2rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light font-display antialiased">
+<div class="relative mx-auto flex h-auto min-h-screen w-full max-w-md flex-col overflow-x-hidden pb-24">
+<main class="flex-1 px-6 py-10">
+<div class="text-center mb-10">
+<h1 class="text-3xl font-bold leading-tight tracking-tight text-slate-900 font-display">您的专属 AI 投资助手</h1>
+<p class="mt-3 text-base text-slate-600 font-display">智能管理您的财务，让生活更轻松。</p>
+</div>
+<div class="flex justify-center items-center my-8">
+<div class="relative w-48 h-48">
+<div class="absolute inset-0 bg-primary/20 rounded-full blur-2xl"></div>
+<div class="relative flex items-center justify-center size-full bg-white rounded-full shadow-lg border border-slate-100">
+<span class="material-symbols-outlined text-7xl text-primary">
+              insights
+            </span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 mt-12">
+<div class="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+<span class="material-symbols-outlined text-2xl">
+              document_scanner
+            </span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-slate-800 text-base font-medium leading-normal">一键风险画像</p>
+<p class="text-slate-500 text-sm font-normal leading-normal mt-1">结合账户流水、画像与资产，5 秒内完成风险承受力评估，实时掌握资金安全垫。</p>
+</div>
+</div>
+<div class="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+<span class="material-symbols-outlined text-2xl">
+              bar_chart
+            </span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-slate-800 text-base font-medium leading-normal">智能投资研究</p>
+<p class="text-slate-500 text-sm font-normal leading-normal mt-1">Analyst + Risk + Trader 多Agent 联动，生成个股日报、交易建议与可修改指引，像专属投顾在线随行。</p>
+</div>
+</div>
+<div class="flex items-start gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+<div class="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+<span class="material-symbols-outlined text-2xl">
+              lightbulb
+            </span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-slate-800 text-base font-medium leading-normal">调仓与仪表盘</p>
+<p class="text-slate-500 text-sm font-normal leading-normal mt-1">一键触发智能调仓提示，配合移动端仪表盘与金融问答，动态跟踪组合表现与市场情绪。</p>
+</div>
+</div>
+</div>
+</main>
+<footer class="bg-background-light/80 backdrop-blur-sm p-4 pt-2 pb-4">
+<div class="flex w-full flex-row items-center justify-center gap-3 py-3">
+<div class="h-2 w-5 rounded-full bg-primary"></div>
+<div class="h-2 w-2 rounded-full bg-slate-300"></div>
+<div class="h-2 w-2 rounded-full bg-slate-300"></div>
+</div>
+<button id="start-btn" class="flex h-12 w-full items-center justify-center rounded-full bg-primary text-white text-base font-bold transition-transform active:scale-95">
+        开始使用
+      </button>
+</footer>
+
+<nav class="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/60 bg-background-light/95 backdrop-blur-md">
+  <div class="mx-auto flex max-w-md items-stretch justify-between px-2">
+    <a href="../welcome/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-primary">
+      <span class="material-symbols-outlined text-xl">home</span>
+      <span class="text-[11px] font-semibold">开始</span>
+    </a>
+    <a href="../risk/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+      <span class="material-symbols-outlined text-xl">shield_person</span>
+      <span class="text-[11px] font-semibold">风险评估</span>
+    </a>
+    <a href="../report/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+      <span class="material-symbols-outlined text-xl">analytics</span>
+      <span class="text-[11px] font-semibold">智能投资</span>
+    </a>
+    <a href="../trader_chat/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+      <span class="material-symbols-outlined text-xl">forum</span>
+      <span class="text-[11px] font-semibold">金融问答</span>
+    </a>
+    <a href="../visual/code.html" class="flex flex-1 flex-col items-center justify-center py-2 text-slate-400 hover:text-primary">
+      <span class="material-symbols-outlined text-xl">dashboard</span>
+      <span class="text-[11px] font-semibold">仪表盘</span>
+    </a>
+  </div>
+</nav>
+<script>
+document.getElementById('start-btn').addEventListener('click', () => {
+  window.location.href = '../report/code.html';
+});
+</script>
+</div>
+
+</body></html>
