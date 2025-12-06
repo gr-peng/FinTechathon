@@ -55,3 +55,4 @@ LLM_Models/
 **/*.safetensors
 **/model/
 **/checkpoint/
+.git_disabled/
